@@ -27,6 +27,7 @@ fun AppNavGraph(viewModel: AppViewModel = viewModel()) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
 
     val bottomNavRoutes = setOf(
         Screen.Home.route,
@@ -53,7 +54,7 @@ fun AppNavGraph(viewModel: AppViewModel = viewModel()) {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Splash.route,
             modifier = Modifier.padding(innerPadding),
             enterTransition = {
                 slideInHorizontally(tween(400)) { it / 2 } + fadeIn(tween(400))
@@ -90,6 +91,9 @@ fun AppNavGraph(viewModel: AppViewModel = viewModel()) {
                     viewModel = viewModel,
                     navController = navController
                 )
+            }
+            composable(Screen.Splash.route) {
+                SplashScreen(viewModel = viewModel, navController = navController)
             }
             composable(Screen.Login.route) {
                 LoginScreen(viewModel = viewModel, navController = navController)

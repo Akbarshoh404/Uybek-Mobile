@@ -10,6 +10,9 @@ import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
 import android.app.Activity
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.FirebaseTooManyRequestsException
 
 /**
  * Sealed result type for all auth operations.
@@ -26,6 +29,10 @@ sealed class AuthResult {
 class AuthRepository {
 
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    init {
+        firebaseAuth.setLanguageCode("uz")
+    }
 
     /** Currently signed-in Firebase user, or null. */
     val currentUser: FirebaseUser? get() = firebaseAuth.currentUser
@@ -76,7 +83,7 @@ class AuthRepository {
             val user = result.user ?: return AuthResult.Error("Google kirish amalga oshmadi")
             AuthResult.Success(user)
         } catch (e: Exception) {
-            AuthResult.Error(e.localizedMessage ?: "Google bilan kirishda xatolik")
+            AuthResult.Error(mapGoogleAuthError(e))
         }
     }
 
@@ -100,7 +107,7 @@ class AuthRepository {
                 onAutoVerified(credential)
             }
             override fun onVerificationFailed(e: FirebaseException) {
-                onError(e.localizedMessage ?: "Tekshirishda xatolik")
+                onError(mapPhoneAuthError(e))
             }
             override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
                 onCodeSent(verificationId)
@@ -144,5 +151,37 @@ class AuthRepository {
 
     fun signOut() {
         firebaseAuth.signOut()
+    }
+
+    private fun mapGoogleAuthError(error: Exception): String {
+        val message = error.localizedMessage.orEmpty()
+        return when {
+            error is FirebaseAuthInvalidCredentialsException ->
+                "Google tokeni yaroqsiz. Web Client ID yoki google-services.json noto'g'ri bo'lishi mumkin."
+            error is FirebaseAuthException && message.contains("12500") ->
+                "Google kirish sozlanmagan. Firebase Console'da Google provider va OAuth clientlarni tekshiring."
+            message.contains("developer console", ignoreCase = true) ->
+                "Google kirish Google Cloud yoki Firebase sozlamalari bilan mos emas. SHA va OAuth clientlarni tekshiring."
+            else -> error.localizedMessage ?: "Google bilan kirishda xatolik"
+        }
+    }
+
+    private fun mapPhoneAuthError(error: FirebaseException): String {
+        val message = error.localizedMessage.orEmpty()
+        return when {
+            message.contains(
+                "SMS unable to be sent until this region enabled by the app developer",
+                ignoreCase = true
+            ) -> "SMS yuborish bloklangan. Firebase Console > Authentication > Settings > SMS region policy ichida Uzbekistan (+998) ni yoqing."
+            message.contains("No Recaptcha Enterprise siteKey configured", ignoreCase = true) ->
+                "Telefon tasdiqlash uchun Firebase reCAPTCHA/Play Integrity sozlanmagan. SHA-1 va SHA-256 ni qo'shing, so'ng phone auth konfiguratsiyasini yangilang."
+            error is FirebaseAuthInvalidCredentialsException ->
+                "Telefon raqami yoki tasdiqlash ma'lumoti noto'g'ri. Raqam formatini (+998...) va Firebase SHA sozlamalarini tekshiring."
+            error is FirebaseTooManyRequestsException ->
+                "Juda ko'p urinish bo'ldi. Biroz kutib, qayta urinib ko'ring."
+            error::class.java.simpleName == "FirebaseAuthMissingActivityForRecaptchaException" ->
+                "reCAPTCHA oynasini ochish uchun activity topilmadi. Ilovani qayta ochib, yana urinib ko'ring."
+            else -> error.localizedMessage ?: "Tekshirishda xatolik"
+        }
     }
 }

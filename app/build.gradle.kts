@@ -41,6 +41,22 @@ android {
     }
 }
 
+// Force all Ktor modules to 3.0.3 so they stay compatible with Kotlin 2.0.21
+configurations.all {
+    resolutionStrategy {
+        force("io.ktor:ktor-client-android:3.0.3")
+        force("io.ktor:ktor-client-core:3.0.3")
+        force("io.ktor:ktor-client-content-negotiation:3.0.3")
+        force("io.ktor:ktor-serialization-kotlinx-json:3.0.3")
+        force("io.ktor:ktor-utils:3.0.3")
+        force("io.ktor:ktor-http:3.0.3")
+        force("io.ktor:ktor-io:3.0.3")
+        force("io.ktor:ktor-events:3.0.3")
+        force("io.ktor:ktor-websockets:3.0.3")
+        force("io.ktor:ktor-network:3.0.3")
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

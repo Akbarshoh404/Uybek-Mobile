@@ -17,6 +17,7 @@ sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Register : Screen("register")
     data object MyListings : Screen("my_listings")
+    data object Splash : Screen("splash")
 }
 
 data class BottomNavItem(
