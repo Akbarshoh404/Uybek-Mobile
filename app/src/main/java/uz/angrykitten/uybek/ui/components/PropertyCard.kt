@@ -1,6 +1,5 @@
 package uz.angrykitten.uybek.ui.components
 
-import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -10,59 +9,69 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bed
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Bed
 import androidx.compose.material.icons.filled.SquareFoot
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import uz.angrykitten.uybek.data.model.Property
-import uz.angrykitten.uybek.ui.theme.Brand
-import uz.angrykitten.uybek.ui.theme.AccentSale
 import uz.angrykitten.uybek.ui.theme.AccentRent
+import uz.angrykitten.uybek.ui.theme.AccentSale
+import uz.angrykitten.uybek.ui.theme.Brand
+import java.text.NumberFormat
+import java.util.Locale
+
+private val PropertyCardShape = RoundedCornerShape(26.dp)
+private val PropertyImageShape = RoundedCornerShape(22.dp)
 
 fun formatPrice(price: Double, currency: String, period: String?): String {
-    val formatted = if (price >= 1_000_000) {
-        "${"%.1f".format(price / 1_000_000)} mln"
-    } else if (price >= 1_000) {
-        "${"%.0f".format(price / 1_000)}K"
-    } else {
-        "%.0f".format(price)
-    }
-    val symbol = if (currency == "USD") "$" else "so'm"
-    val suffix = if (period != null) "/$period" else ""
-    return "$symbol$formatted$suffix"
+    val formatter = NumberFormat.getNumberInstance(Locale.US)
+    val formatted = formatter.format(price).replace(",", " ")
+    val periodStr = if (!period.isNullOrBlank() && period != "null") "/$period" else ""
+    return "$formatted $currency$periodStr"
 }
 
 @Composable
-fun DealTypeBadge(dealType: String, modifier: Modifier = Modifier) {
-    val color = if (dealType == "sale") AccentSale else AccentRent
-    val text = if (dealType == "sale") "SOTILADI" else "IJARAGA"
+fun DealTypeBadge(dealType: String, modifier: Modifier = Modifier, compact: Boolean = false) {
+    val isSale = dealType == "sale"
+    val badgeColor = if (isSale) AccentSale else AccentRent
+    val badgeText = if (isSale) "SOTUV" else "IJARA"
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = color,
-        modifier = modifier
+        modifier = modifier,
+        shape = RoundedCornerShape(if (compact) 12.dp else 14.dp),
+        color = badgeColor.copy(alpha = 0.14f),
+        contentColor = badgeColor
     ) {
         Text(
-            text = text,
+            text = badgeText,
+            modifier = Modifier.padding(horizontal = if (compact) 8.dp else 10.dp, vertical = 5.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.5.sp
+            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -75,11 +84,11 @@ fun PropertyCard(
     onToggleSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isPressed by remember { mutableStateOf(false) }
+    var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = tween(200),
-        label = "cardScale"
+        targetValue = if (pressed) 0.985f else 1f,
+        animationSpec = tween(180),
+        label = "propertyCardScale"
     )
 
     Card(
@@ -91,215 +100,214 @@ fun PropertyCard(
                 indication = null,
                 onClick = onCardClick
             ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp,
-            pressedElevation = 8.dp
-        ),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = PropertyCardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column {
-            // Image Container with Overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-            ) {
-                // Main Image
+        Column(modifier = Modifier.padding(12.dp)) {
+            Box {
                 AsyncImage(
                     model = property.images.firstOrNull(),
                     contentDescription = property.title,
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxWidth()
+                        .aspectRatio(1.42f)
+                        .clip(PropertyImageShape),
                     contentScale = ContentScale.Crop
                 )
 
-                // Gradient Overlay
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.3f)
-                                ),
-                                startY = 100f
-                            )
-                        )
-                )
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .padding(10.dp)
+                ) {
+                    DealTypeBadge(
+                        dealType = property.deal_type,
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                    SaveButton(
+                        isSaved = isSaved,
+                        onToggleSave = onToggleSave,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    )
+                }
 
-                // Deal Type Badge
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(10.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)
+                ) {
+                    Text(
+                        text = formatPrice(property.price, property.currency, property.price_period),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = Brand
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = property.title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "${property.district_name}, ${property.city_name}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                PropertyStat(Icons.Default.Bed, "${property.bedrooms} xona")
+                PropertyStat(Icons.Default.SquareFoot, "${property.area_m2.toInt()} m2")
+                PropertyStat(Icons.Default.Layers, "${property.floor}/${property.total_floors}")
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(top = 14.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun PropertyGridCard(
+    property: Property,
+    isSaved: Boolean,
+    onCardClick: () -> Unit,
+    onToggleSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onCardClick),
+        shape = PropertyCardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Box {
+                AsyncImage(
+                    model = property.images.firstOrNull(),
+                    contentDescription = property.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.92f)
+                        .clip(PropertyImageShape),
+                    contentScale = ContentScale.Crop
+                )
                 DealTypeBadge(
                     dealType = property.deal_type,
+                    compact = true,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(12.dp)
+                        .padding(8.dp)
                 )
-
-                // Save Button with Animation
-                SaveButtonAnimated(
+                SaveButton(
                     isSaved = isSaved,
                     onToggleSave = onToggleSave,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(12.dp)
+                        .padding(8.dp)
                 )
-
-                // Price Badge at Bottom
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.95f),
-                    shadowElevation = 4.dp
-                ) {
-                    Text(
-                        text = formatPrice(property.price, property.currency, property.price_period),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Brand,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
             }
 
-            // Content Section
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Title
-                Text(
-                    text = property.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+            Spacer(modifier = Modifier.height(10.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = formatPrice(property.price, property.currency, property.price_period),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black,
+                color = Brand,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                // Location
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = Brand,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${property.district_name}, ${property.city_name}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Spacer(modifier = Modifier.height(6.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = property.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
 
-                // Divider
-                Divider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
-                    thickness = 1.dp
-                )
+            Spacer(modifier = Modifier.height(6.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Property Stats
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (property.bedrooms > 0) {
-                        PropertyStat(
-                            icon = { 
-                                Icon(
-                                    Icons.Default.Bed, 
-                                    null, 
-                                    modifier = Modifier.size(16.dp), 
-                                    tint = Brand
-                                ) 
-                            },
-                            value = "${property.bedrooms}"
-                        )
-                    }
-                    PropertyStat(
-                        icon = { 
-                            Icon(
-                                Icons.Default.SquareFoot, 
-                                null, 
-                                modifier = Modifier.size(16.dp), 
-                                tint = Brand
-                            ) 
-                        },
-                        value = "${property.area_m2.toInt()} m²"
-                    )
-                    if (property.floor > 0) {
-                        PropertyStat(
-                            icon = null,
-                            value = "${property.floor}/${property.total_floors}"
-                        )
-                    }
-                }
-            }
+            Text(
+                text = property.district_name,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
 
 @Composable
-fun SaveButtonAnimated(
+fun SaveButton(
     isSaved: Boolean,
     onToggleSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isAnimating by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isAnimating) 1.2f else 1f,
-        animationSpec = tween(300),
-        label = "saveButtonScale",
-        finishedListener = { isAnimating = false }
-    )
-
     IconButton(
-        onClick = {
-            isAnimating = true
-            onToggleSave()
-        },
+        onClick = onToggleSave,
         modifier = modifier
-            .size(40.dp)
-            .scale(scale)
-            .background(Color.White.copy(alpha = 0.9f), CircleShape),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = if (isSaved) Color(0xFFE53935) else Color.Gray
-        )
+            .size(38.dp)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f), CircleShape)
     ) {
         Icon(
             imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             contentDescription = "Save",
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(18.dp),
+            tint = if (isSaved) AccentSale else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-fun PropertyStat(
-    icon: (@Composable () -> Unit)?,
-    value: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(0.3f)
-    ) {
-        if (icon != null) {
-            icon()
-            Spacer(modifier = Modifier.width(4.dp))
-        }
+fun PropertyStat(icon: ImageVector, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(15.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
@@ -317,90 +325,58 @@ fun PropertyListCard(
     onToggleSave: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = tween(200),
-        label = "listCardScale"
-    )
-
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .scale(scale)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onCardClick
-            ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onCardClick),
+        shape = PropertyCardShape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Image
             AsyncImage(
                 model = property.images.firstOrNull(),
                 contentDescription = property.title,
                 modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .size(92.dp)
+                    .clip(RoundedCornerShape(20.dp)),
                 contentScale = ContentScale.Crop
             )
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Content
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = property.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.LocationOn, 
-                        null, 
-                        tint = Brand, 
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = "${property.district_name}, ${property.city_name}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = formatPrice(property.price, property.currency, property.price_period),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     color = Brand
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = property.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${property.district_name}, ${property.city_name}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
-            // Save Button
-            IconButton(
-                onClick = onToggleSave,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Save",
-                    tint = if (isSaved) Color(0xFFE53935) else MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+            SaveButton(
+                isSaved = isSaved,
+                onToggleSave = onToggleSave
+            )
         }
     }
 }

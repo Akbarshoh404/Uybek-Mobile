@@ -1,11 +1,15 @@
 package uz.angrykitten.uybek.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class City(
     val id: Int,
     val name: String,
     val slug: String
 )
 
+@Serializable
 data class District(
     val id: Int,
     val city_id: Int,
@@ -13,6 +17,7 @@ data class District(
     val slug: String
 )
 
+@Serializable
 data class Property(
     val id: String,
     val user_id: String,
@@ -46,6 +51,7 @@ data class Property(
     val seller_avatar: String
 )
 
+@Serializable
 data class AppData(
     val cities: List<City>,
     val districts: List<District>,

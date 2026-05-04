@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -64,12 +65,32 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
     var currency by remember { mutableStateOf("USD") }
     var pricePeriod by remember { mutableStateOf<String?>(null) }
     var phone by remember { mutableStateOf("") }
-    var whatsapp by remember { mutableStateOf("") }
+    var telegram by remember { mutableStateOf("") }
+    var stepError by remember { mutableStateOf<String?>(null) }
 
     val userName by viewModel.userName.collectAsStateWithLifecycle()
+    val userPhone by viewModel.userPhone.collectAsStateWithLifecycle()
     val cities = viewModel.getCities()
 
+    // Auto-fill phone from user profile on first composition
+    LaunchedEffect(userPhone) {
+        if (phone.isBlank() && !userPhone.isNullOrBlank()) {
+            phone = userPhone!!.removePrefix("+998")
+        }
+    }
+
     val stepTitles = listOf("Muomala turi", "Mulk haqida", "Joylashuv", "Narx va aloqa", "Sharh")
+
+    // Required field validation per step
+    fun canProceed(): Pair<Boolean, String?> = when (currentStep) {
+        2 -> if (selectedCityId != null) true to null else false to "Shaharni tanlash majburiy"
+        3 -> when {
+            price.isBlank() -> false to "Narxni kiriting"
+            phone.isBlank() -> false to "Telefon raqamni kiriting"
+            else -> true to null
+        }
+        else -> true to null
+    }
 
     Column(
         modifier = Modifier
@@ -135,10 +156,24 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                     onCitySelected = { id, name -> selectedCityId = id; selectedCityName = name; selectedDistrictId = null; selectedDistrictName = "" },
                     onDistrictSelected = { id, name -> selectedDistrictId = id; selectedDistrictName = name },
                     onAddress = { address = it })
-                3 -> StepPriceContact(price, currency, pricePeriod, phone, whatsapp, dealType,
+                3 -> StepPriceContact(price, currency, pricePeriod, phone, telegram, dealType,
                     onPrice = { price = it }, onCurrency = { currency = it },
-                    onPricePeriod = { pricePeriod = it }, onPhone = { phone = it }, onWhatsapp = { whatsapp = it })
+                    onPricePeriod = { pricePeriod = it }, onPhone = { phone = it }, onTelegram = { telegram = it })
                 4 -> StepReview(dealType, propertyType, title, selectedCityName, selectedDistrictName, area, bedrooms, price, currency, pricePeriod)
+            }
+            // Step error message
+            stepError?.let { err ->
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    shape = RoundedCornerShape(0.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(err, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
         }
 
@@ -154,17 +189,20 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                     OutlinedButton(
                         onClick = { currentStep-- },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp)
+                        shape = RoundedCornerShape(0.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
-                        Icon(Icons.Default.ArrowBack, null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ArrowBack, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.width(6.dp))
-                        Text("Orqaga")
+                        Text("Orqaga", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
                 Button(
                     onClick = {
                         if (currentStep < totalSteps - 1) {
-                            currentStep++
+                            val (ok, err) = canProceed()
+                            if (ok) { currentStep++; stepError = null }
+                            else stepError = err
                         } else {
                             // Submit
                             val property = Property(
@@ -195,8 +233,8 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                                 views_count = 0,
                                 images = listOf("https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800"),
                                 seller_name = userName ?: "Foydalanuvchi",
-                                seller_phone = phone,
-                                seller_whatsapp = whatsapp.ifBlank { phone },
+                                seller_phone = if (phone.isNotBlank()) "+998$phone" else "",
+                                seller_whatsapp = if (telegram.isNotBlank()) telegram else "",
                                 seller_avatar = ""
                             )
                             viewModel.postListing(property)
@@ -206,16 +244,17 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Brand)
+                    shape = RoundedCornerShape(0.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Text(
                         if (currentStep == totalSteps - 1) "E'lon berish" else "Keyingisi",
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.surface
                     )
                     if (currentStep < totalSteps - 1) {
                         Spacer(Modifier.width(6.dp))
-                        Icon(Icons.Default.ArrowForward, null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.ArrowForward, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.surface)
                     }
                 }
             }
@@ -288,20 +327,21 @@ fun DealTypeCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, Brand) else null,
+        shape = RoundedCornerShape(0.dp),
+        border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) 
+                 else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) Brand.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+            containerColor = if (selected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
         ),
         onClick = onClick
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(icon, null, tint = if (selected) Brand else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(6.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium, color = if (selected) Brand else MaterialTheme.colorScheme.onSurface, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
         }
     }
 }
@@ -367,8 +407,8 @@ fun StepLocation(
                 leadingIcon = { Icon(Icons.Default.LocationCity, null, tint = Brand) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cityExpanded) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand)
+                shape = RoundedCornerShape(0.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface)
             )
             ExposedDropdownMenu(expanded = cityExpanded, onDismissRequest = { cityExpanded = false }) {
                 cities.forEach { city ->
@@ -390,8 +430,8 @@ fun StepLocation(
                 leadingIcon = { Icon(Icons.Default.Map, null, tint = Brand) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(districtExpanded) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
+                shape = RoundedCornerShape(0.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
                 enabled = selectedCityId != null
             )
             ExposedDropdownMenu(expanded = districtExpanded, onDismissRequest = { districtExpanded = false }) {
@@ -410,20 +450,21 @@ fun StepLocation(
 
 @Composable
 fun StepPriceContact(
-    price: String, currency: String, pricePeriod: String?, phone: String, whatsapp: String, dealType: String,
+    price: String, currency: String, pricePeriod: String?, phone: String, telegram: String, dealType: String,
     onPrice: (String) -> Unit, onCurrency: (String) -> Unit,
-    onPricePeriod: (String?) -> Unit, onPhone: (String) -> Unit, onWhatsapp: (String) -> Unit
+    onPricePeriod: (String?) -> Unit, onPhone: (String) -> Unit, onTelegram: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Narx va aloqa", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        PostFormField("Narx", price, onPrice, KeyboardType.Number)
+        PostFormField("Narx *", price, onPrice, KeyboardType.Number)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             listOf("USD" to "$", "UZS" to "so'm").forEach { (c, label) ->
                 FilterChip(
                     selected = currency == c,
                     onClick = { onCurrency(c) },
                     label = { Text("$c ($label)") },
-                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Brand, selectedLabelColor = Color.White)
+                    shape = RoundedCornerShape(0.dp),
+                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.onSurface, selectedLabelColor = MaterialTheme.colorScheme.surface)
                 )
             }
         }
@@ -435,14 +476,67 @@ fun StepPriceContact(
                         selected = pricePeriod == p,
                         onClick = { onPricePeriod(p) },
                         label = { Text(label) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Brand, selectedLabelColor = Color.White)
+                        shape = RoundedCornerShape(0.dp),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.onSurface, selectedLabelColor = MaterialTheme.colorScheme.surface)
                     )
                 }
             }
         }
-        PostFormField("Telefon raqam", phone, onPhone, KeyboardType.Phone)
-        PostFormField("WhatsApp raqam", whatsapp, onWhatsapp, KeyboardType.Phone)
+
+        // Phone with +998 prefix
+        Text("Aloqa ma'lumotlari", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        PhoneFieldUz("Telefon raqam *", phone, onPhone)
+        PostFormField("Telegram (@username)", telegram, onTelegram)
     }
+}
+
+@Composable
+fun PhoneFieldUz(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { input ->
+            // Only allow digits, max 9 after +998
+            val digits = input.filter { it.isDigit() }.take(9)
+            onValueChange(digits)
+        },
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        prefix = {
+            Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(
+                    "+998",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        placeholder = { Text("XX XXX XX XX") },
+        leadingIcon = {
+            Icon(Icons.Default.Phone, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+        },
+        supportingText = {
+            val digits = value.filter { it.isDigit() }
+            Text(
+                if (digits.isNotEmpty()) "+998 ${
+                    digits.chunked(2).joinToString(" ")
+                }" else "Masalan: 90 123 45 67",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    )
 }
 
 @Composable
@@ -451,41 +545,93 @@ fun StepReview(
     cityName: String, districtName: String, area: String,
     bedrooms: String, price: String, currency: String, pricePeriod: String?
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("E'lon ko'rib chiqish", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+    val dealLabel = if (dealType == "sale") "Sotiladi" else "Ijaraga"
+    val typeLabel = when (propertyType) {
+        "apartment" -> "Kvartira"
+        "house" -> "Uy"
+        "commercial" -> "Tijorat"
+        "land" -> "Yer"
+        else -> propertyType
+    }
+    val location = listOfNotNull(
+        districtName.ifBlank { null },
+        cityName.ifBlank { null }
+    ).joinToString(", ").ifBlank { "(kiritilmagan)" }
+    val priceText = if (price.isNotBlank())
+        "$price $currency${if (pricePeriod == "month") "/oy" else if (pricePeriod == "year") "/yil" else ""}"
+    else "(kiritilmagan)"
+
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Text(
+            "E'lon ko'rib chiqish",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        // Summary card
         Card(
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            shape = RoundedCornerShape(0.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ReviewRow("Muomala", if (dealType == "sale") "Sotiladi" else "Ijaraga")
-                ReviewRow("Mulk turi", when(propertyType) {
-                    "apartment" -> "Kvartira"
-                    "house" -> "Uy"
-                    "commercial" -> "Tijorat"
-                    "land" -> "Yer"
-                    else -> propertyType
-                })
-                ReviewRow("Sarlavha", title.ifBlank { "(kiritilmagan)" })
-                ReviewRow("Joylashuv", "$districtName, $cityName".trim(',', ' ').ifBlank { "(kiritilmagan)" })
-                ReviewRow("Maydon", if (area.isNotBlank()) "$area m²" else "(kiritilmagan)")
-                if (bedrooms.isNotBlank()) ReviewRow("Xonalar", "$bedrooms ta")
-                ReviewRow("Narx", if (price.isNotBlank()) "$price $currency${if (pricePeriod != null) "/$pricePeriod" else ""}" else "(kiritilmagan)")
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                ReviewIconRow(Icons.Default.Sell, "Muomala turi", dealLabel)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                ReviewIconRow(Icons.Default.Home, "Mulk turi", typeLabel)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                ReviewIconRow(Icons.Default.TextFields, "Sarlavha", title.ifBlank { "(kiritilmagan)" })
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                ReviewIconRow(Icons.Default.LocationOn, "Joylashuv", location)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                if (area.isNotBlank()) {
+                    ReviewIconRow(Icons.Default.SquareFoot, "Maydon", "$area m²")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                }
+                if (bedrooms.isNotBlank()) {
+                    ReviewIconRow(Icons.Default.KingBed, "Xonalar", "$bedrooms ta")
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f), thickness = 1.dp)
+                }
+                ReviewIconRow(Icons.Default.AttachMoney, "Narx", priceText)
             }
         }
+
+        // Info banner
         Card(
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = Brand.copy(alpha = 0.08f)),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Brand.copy(alpha = 0.3f))
+            shape = RoundedCornerShape(0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
-            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, null, tint = Brand, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "E'lon berish tugmasini bosganingizdan so'ng e'lon darhol faollashadi",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Brand
-                )
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(0.dp))
+                        .background(MaterialTheme.colorScheme.onSurface),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(20.dp))
+                }
+                Column {
+                    Text(
+                        "Tayyor!",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "E'lon berish tugmasini bosganingizdan so'ng e'lon darhol faollashadi va ko'rib chiqiladi.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -496,6 +642,31 @@ fun ReviewRow(label: String, value: String) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
+
+@Composable
+fun ReviewIconRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -514,8 +685,8 @@ fun PostFormField(
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
+        shape = RoundedCornerShape(0.dp),
+        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = singleLine,
         minLines = minLines

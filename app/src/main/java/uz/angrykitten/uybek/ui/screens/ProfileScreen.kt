@@ -1,75 +1,292 @@
 package uz.angrykitten.uybek.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import uz.angrykitten.uybek.ui.navigation.Screen
+import uz.angrykitten.uybek.ui.theme.AccentGold
+import uz.angrykitten.uybek.ui.theme.AccentRose
+import uz.angrykitten.uybek.ui.theme.AccentSky
 import uz.angrykitten.uybek.ui.theme.Brand
 import uz.angrykitten.uybek.ui.theme.BrandDark
-import uz.angrykitten.uybek.ui.theme.GradientStart
-import uz.angrykitten.uybek.ui.theme.GradientEnd
+import uz.angrykitten.uybek.ui.theme.BrandLight
+import uz.angrykitten.uybek.ui.theme.LocalDarkTheme
 import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
 
+@androidx.compose.material3.ExperimentalMaterial3Api
 @Composable
-fun ProfileScreen(viewModel: AppViewModel, navController: NavController) {
+fun ProfileScreen(
+    viewModel: AppViewModel,
+    navController: NavController,
+    onToggleTheme: () -> Unit = {}
+) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val userEmail by viewModel.userEmail.collectAsStateWithLifecycle()
     val userAvatar by viewModel.userAvatar.collectAsStateWithLifecycle()
+    val savedIds by viewModel.savedIds.collectAsStateWithLifecycle()
+    val isDark = LocalDarkTheme.current
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Enhanced Header with Gradient
-        item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(GradientStart, GradientEnd)
+    var showSignOutDialog by remember { mutableStateOf(false) }
+
+    if (showSignOutDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            shape = RoundedCornerShape(24.dp),
+            title = { Text("Akkauntdan chiqish", fontWeight = FontWeight.Bold) },
+            text = { Text("Haqiqatan ham akkauntdan chiqmoqchimisiz?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.signOut()
+                        showSignOutDialog = false
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandDark)
+                ) {
+                    Text("Chiqish", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showSignOutDialog = false },
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("Bekor qilish")
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Profil", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = "Mavzuni almashtirish"
                         )
-                    )
-                    .padding(top = 48.dp, bottom = 40.dp),
-                contentAlignment = Alignment.Center
-            ) {
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
                 if (isLoggedIn) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
+                    LoggedInProfileHero(
+                        userName = userName ?: "Foydalanuvchi",
+                        userEmail = userEmail.orEmpty(),
+                        userAvatar = userAvatar,
+                        listingCount = viewModel.getUserProperties().size,
+                        savedCount = savedIds.size
+                    )
+                } else {
+                    GuestProfileHero(
+                        onLogin = { navController.navigate(Screen.Login.route) },
+                        onRegister = { navController.navigate(Screen.Register.route) }
+                    )
+                }
+            }
+
+            if (isLoggedIn) {
+                item { SectionLabel("Mening hisobim") }
+                item {
+                    ActionGroupCard {
+                        ProfileActionRow(
+                            icon = Icons.Default.List,
+                            title = "Mening e'lonlarim",
+                            subtitle = "Joylashtirilgan mulklarni boshqarish",
+                            onClick = { navController.navigate(Screen.MyListings.route) }
+                        )
+                        ProfileActionRow(
+                            icon = Icons.Default.Favorite,
+                            title = "Saqlangan e'lonlar",
+                            subtitle = "Yoqtirgan mulklaringiz ro'yxati",
+                            onClick = { navController.navigate(Screen.Saved.route) }
+                        )
+                    }
+                }
+            }
+
+            item { SectionLabel("Ilova") }
+            item {
+                ActionGroupCard {
+                    ProfileActionRow(
+                        icon = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        title = if (isDark) "Yorug' rejim" else "Qorong'u rejim",
+                        subtitle = "Ilova ko'rinishini almashtirish",
+                        badge = if (isDark) "Dark" else "Light",
+                        onClick = onToggleTheme
+                    )
+                    ProfileActionRow(
+                        icon = Icons.Default.Settings,
+                        title = "Sozlamalar",
+                        subtitle = "Profil va ilova sozlamalari",
+                        onClick = { navController.navigate(Screen.Settings.route) }
+                    )
+                }
+            }
+
+            item { SectionLabel("Ma'lumot") }
+            item {
+                ActionGroupCard {
+                    ProfileActionRow(
+                        icon = Icons.Default.Info,
+                        title = "Ilova haqida",
+                        subtitle = "Uybek, versiya 1.0",
+                        onClick = {}
+                    )
+                    ProfileActionRow(
+                        icon = Icons.Default.Help,
+                        title = "Yordam markazi",
+                        subtitle = "Ko'p so'raladigan savollar",
+                        onClick = { navController.navigate(Screen.FAQ.route) }
+                    )
+                    ProfileActionRow(
+                        icon = Icons.Outlined.Shield,
+                        title = "Maxfiylik siyosati",
+                        subtitle = "Ma'lumotlar xavfsizligi va qoidalar",
+                        onClick = { navController.navigate(Screen.PrivacyPolicy.route) }
+                    )
+                }
+            }
+
+            if (isLoggedIn) {
+                item {
+                    Button(
+                        onClick = { showSignOutDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
-                        // Avatar with Animation
+                        Icon(Icons.Default.Logout, contentDescription = null, tint = AccentRose)
+                        Spacer(modifier = Modifier.size(10.dp))
+                        Text(
+                            "Akkauntdan chiqish",
+                            color = AccentRose,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoggedInProfileHero(
+    userName: String,
+    userEmail: String,
+    userAvatar: String?,
+    listingCount: Int,
+    savedCount: Int
+) {
+    Card(
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        listOf(BrandDark, Brand, AccentSky.copy(alpha = 0.82f))
+                    )
+                )
+                .padding(22.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f))
+                                .size(88.dp)
+                                .clip(RoundedCornerShape(30.dp))
+                                .background(Color.White.copy(alpha = 0.18f)),
+                            contentAlignment = Alignment.Center
                         ) {
                             if (!userAvatar.isNullOrBlank()) {
                                 AsyncImage(
@@ -79,269 +296,205 @@ fun ProfileScreen(viewModel: AppViewModel, navController: NavController) {
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.Person,
-                                        null,
-                                        modifier = Modifier.size(56.dp),
-                                        tint = Color.White
-                                    )
-                                }
+                                Text(
+                                    text = initial(userName),
+                                    fontSize = 34.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
-
-                        Text(
-                            userName ?: "Foydalanuvchi",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            userEmail ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                    }
-                } else {
-                    // Guest State
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Person,
-                                null,
-                                modifier = Modifier.size(56.dp),
-                                tint = Color.White
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = userName,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Black,
+                                color = Color.White,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = userEmail,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.78f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            "Mehmon",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "Akkauntga kirish uchun",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                        Spacer(Modifier.height(16.dp))
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        ) {
-                            Button(
-                                onClick = { navController.navigate(Screen.Login.route) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White,
-                                    contentColor = Brand
-                                )
-                            ) {
-                                Text("Kirish", fontWeight = FontWeight.SemiBold)
-                            }
-                            OutlinedButton(
-                                onClick = { navController.navigate(Screen.Register.route) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(44.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White)
-                            ) {
-                                Text("Ro'yxat", fontWeight = FontWeight.SemiBold)
-                            }
-                        }
                     }
                 }
-            }
-        }
 
-        // Menu Items
-        item { Spacer(Modifier.height(8.dp)) }
-
-        if (isLoggedIn) {
-            item {
-                AnimatedProfileMenuItem(
-                    icon = Icons.Default.List,
-                    title = "Mening e'lonlarim",
-                    subtitle = "Sizning joylashtirgan e'lonlar",
-                    onClick = { navController.navigate(Screen.MyListings.route) }
-                )
-            }
-            item {
-                AnimatedProfileMenuItem(
-                    icon = Icons.Default.Favorite,
-                    title = "Saqlangan e'lonlar",
-                    subtitle = "Sevimli e'lonlar",
-                    onClick = { navController.navigate(Screen.Saved.route) }
-                )
-            }
-        }
-
-        item {
-            AnimatedProfileMenuItem(
-                icon = Icons.Default.Settings,
-                title = "Sozlamalar",
-                subtitle = "Ilovani sozlash",
-                onClick = {}
-            )
-        }
-
-        item {
-            AnimatedProfileMenuItem(
-                icon = Icons.Default.Info,
-                title = "Ilova haqida",
-                subtitle = "Versiya va ma'lumot",
-                onClick = {}
-            )
-        }
-
-        item {
-            AnimatedProfileMenuItem(
-                icon = Icons.Default.Help,
-                title = "Yordam",
-                subtitle = "FAQ va qo'llab-quvvatlash",
-                onClick = {}
-            )
-        }
-
-        if (isLoggedIn) {
-            item {
-                Spacer(Modifier.height(16.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { viewModel.signOut() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFE53935)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.5.dp,
-                            Color(0xFFE53935)
-                        )
-                    ) {
-                        Icon(Icons.Default.Logout, null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Chiqish", fontWeight = FontWeight.SemiBold)
-                    }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MetricChip(label = "E'lonlar", value = listingCount.toString(), tint = AccentGold)
+                    MetricChip(label = "Saqlangan", value = savedCount.toString(), tint = BrandLight)
+                    MetricChip(label = "Status", value = "Faol", tint = AccentSky)
                 }
-                Spacer(Modifier.height(32.dp))
             }
         }
     }
 }
 
 @Composable
-fun AnimatedProfileMenuItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isPressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = tween(150),
-        label = "menuItemScale"
-    )
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .scale(scale)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-                onClickLabel = title
-            )
+private fun GuestProfileHero(onLogin: () -> Unit, onRegister: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(32.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Icon Container
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Brand.copy(alpha = 0.12f)),
+                    .size(92.dp)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(BrandLight, AccentRose.copy(alpha = 0.25f))
+                        )
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    icon,
-                    null,
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
                     tint = Brand,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
-
-            // Text Content
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (subtitle != null) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            Text("Profilingizni yarating", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                text = "Saqlanganlar, chat va e'lon boshqaruvi uchun akkauntga kiring.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button(
+                onClick = onLogin,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Brand)
+            ) {
+                Text("Kirish", color = Color.White, fontWeight = FontWeight.Bold)
             }
+            OutlinedButton(
+                onClick = onRegister,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Text("Ro'yxatdan o'tish", fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
 
-            // Chevron
-            Icon(
-                Icons.Default.ChevronRight,
-                null,
-                tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                modifier = Modifier.size(24.dp)
+@Composable
+private fun androidx.compose.foundation.layout.RowScope.MetricChip(
+    label: String,
+    value: String,
+    tint: Color
+) {
+    Surface(
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(20.dp),
+        color = Color.White.copy(alpha = 0.14f)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.72f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = value, fontWeight = FontWeight.Black, color = tint)
+        }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 4.dp)
+    )
+}
+
+@Composable
+private fun ActionGroupCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(content = content)
+    }
+}
+
+@Composable
+private fun ProfileActionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    badge: String? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(BrandLight),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = Brand, modifier = Modifier.size(22.dp))
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // Divider
-        Divider(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxWidth(),
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-            thickness = 1.dp
-        )
+        if (badge != null) {
+            Surface(
+                shape = CircleShape,
+                color = BrandLight
+            ) {
+                Text(
+                    text = badge,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Brand,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
     }
+}
+
+private fun initial(name: String): String {
+    val first = name.firstOrNull()?.uppercaseChar() ?: 'U'
+    return first.toString()
 }

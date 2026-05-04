@@ -2,6 +2,8 @@ package uz.angrykitten.uybek.data.repository
 
 import android.content.Context
 import com.google.gson.Gson
+import io.github.jan.supabase.postgrest.postgrest
+import uz.angrykitten.uybek.data.SupabaseClientProvider
 import uz.angrykitten.uybek.data.model.AppData
 import uz.angrykitten.uybek.data.model.City
 import uz.angrykitten.uybek.data.model.District
@@ -10,19 +12,50 @@ import uz.angrykitten.uybek.data.model.Property
 class PropertyRepository(private val context: Context) {
 
     private val gson = Gson()
+    private val client = SupabaseClientProvider.client
     private var appData: AppData? = null
+    private var loadedFromSupabase = false
 
-    private fun loadData(): AppData {
-        if (appData != null) return appData!!
+    private fun loadLocalData(): AppData {
         val json = context.assets.open("sample_data.json").bufferedReader().use { it.readText() }
-        appData = gson.fromJson(json, AppData::class.java)
+        return gson.fromJson(json, AppData::class.java)
+    }
+
+    private fun currentData(): AppData {
+        if (appData == null) {
+            appData = loadLocalData()
+        }
         return appData!!
     }
 
-    fun getCities(): List<City> = loadData().cities
+    suspend fun refreshFromSupabase(force: Boolean = false): Result<Unit> {
+        if (!force && loadedFromSupabase && appData != null) {
+            return Result.success(Unit)
+        }
+        return try {
+            val cities = client.postgrest["cities"].select().decodeList<City>().sortedBy { it.id }
+            val districts = client.postgrest["districts"].select().decodeList<District>().sortedBy { it.id }
+            val properties = client.postgrest["properties"].select().decodeList<Property>()
+            appData = AppData(
+                cities = cities,
+                districts = districts,
+                properties = properties
+            )
+            loadedFromSupabase = true
+            Result.success(Unit)
+        } catch (e: Exception) {
+            if (appData == null) {
+                appData = loadLocalData()
+            }
+            loadedFromSupabase = false
+            Result.failure(e)
+        }
+    }
+
+    fun getCities(): List<City> = currentData().cities.sortedBy { it.id }
 
     fun getDistricts(cityId: Int? = null): List<District> {
-        val all = loadData().districts
+        val all = currentData().districts.sortedBy { it.id }
         return if (cityId != null) all.filter { it.city_id == cityId } else all
     }
 
@@ -37,7 +70,7 @@ class PropertyRepository(private val context: Context) {
         savedIds: Set<String> = emptySet(),
         onlySaved: Boolean = false
     ): List<Property> {
-        var list = loadData().properties.filter { it.is_active }
+        var list = currentData().properties.filter { it.is_active }
         if (onlySaved) {
             list = list.filter { it.id in savedIds }
         }
@@ -62,18 +95,38 @@ class PropertyRepository(private val context: Context) {
     }
 
     fun getPropertyById(id: String): Property? =
-        loadData().properties.find { it.id == id }
+        currentData().properties.find { it.id == id }
 
-    fun addProperty(property: Property) {
-        val data = loadData()
-        appData = data.copy(properties = data.properties + property)
+    suspend fun addProperty(property: Property): Result<Unit> {
+        // Save locally first so the listing appears immediately regardless of network
+        val data = currentData()
+        appData = data.copy(properties = listOf(property) + data.properties)
+
+        // Attempt background sync to Supabase – failures are silent to the user
+        return try {
+            client.postgrest["properties"].upsert(property)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            // Already saved locally above – report failure only to caller for logging
+            Result.failure(e)
+        }
     }
 
-    fun deleteProperty(id: String) {
-        val data = loadData()
-        appData = data.copy(properties = data.properties.filter { it.id != id })
+    suspend fun deleteProperty(id: String): Result<Unit> {
+        return try {
+            client.postgrest["properties"].delete {
+                filter {
+                    eq("id", id)
+                }
+            }
+            refreshFromSupabase(force = true)
+        } catch (e: Exception) {
+            val data = currentData()
+            appData = data.copy(properties = data.properties.filter { it.id != id })
+            Result.failure(e)
+        }
     }
 
     fun getUserProperties(userId: String): List<Property> =
-        loadData().properties.filter { it.user_id == userId }
+        currentData().properties.filter { it.user_id == userId }
 }

@@ -2,65 +2,52 @@ package uz.angrykitten.uybek.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ============================================
-// PRIMARY BRAND COLORS - Modern Indigo
-// ============================================
-val Brand = Color(0xFF4F46E5)          // Primary Indigo
-val BrandLight = Color(0xFF818CF8)     // Light Indigo for dark mode
-val BrandDark = Color(0xFF3730A3)      // Dark Indigo
+// Core palette
+val Brand = Color(0xFF23445D)
+val BrandDark = Color(0xFF163042)
+val BrandLight = Color(0xFFE9F2F7)
 
-// ============================================
-// SECONDARY ACCENT COLORS - Status Indicators
-// ============================================
-val AccentSale = Color(0xFF10B981)     // Emerald Green for "Sale"
-val AccentRent = Color(0xFFF59E0B)     // Amber for "Rent"
-val AccentLight = Color(0xFFA78BFA)    // Light Purple accent
+// Supporting accents
+val AccentSale = Color(0xFFC76F43)
+val AccentRent = Color(0xFF5D8B73)
+val AccentGold = Color(0xFFD6A24C)
+val AccentRose = Color(0xFFE7B2A8)
+val AccentSky = Color(0xFFA9C9DD)
+val AccentLight = Color(0xFFF6F2EB)
 
-// ============================================
-// LIGHT MODE PALETTE
-// ============================================
-// Backgrounds
-val BgLight = Color(0xFFF9FAFB)        // Soft gray background
-val BgSurface = Color(0xFFFFFFFF)      // Pure white surface
-val BgCard = Color(0xFFF3F4F6)         // Light card background
+// Light surfaces
+val BgLight = Color(0xFFF6F4EF)
+val BgSurface = Color(0xFFFFFCF8)
+val BgCard = Color(0xFFFFFFFF)
 
-// Text Colors
-val TextPrimary = Color(0xFF0F172A)    // Slate 900 - Primary text
-val TextSecondary = Color(0xFF64748B)  // Slate 500 - Secondary text
-val TextHint = Color(0xFF94A3B8)       // Slate 400 - Hint text
-val TextTertiary = Color(0xFFCBD5E1)   // Slate 200 - Tertiary text
+val TextPrimary = Color(0xFF1E2933)
+val TextSecondary = Color(0xFF60717F)
+val TextHint = Color(0xFF93A1AC)
+val TextTertiary = Color(0xFFD3DAE0)
 
-// Status Colors
-val ColorSale = Color(0xFF10B981)      // Emerald for sale
-val ColorRent = Color(0xFFF59E0B)      // Amber for rent
-val ColorError = Color(0xFFEF4444)     // Red for errors
-val ColorSuccess = Color(0xFF10B981)   // Green for success
-val ColorWarning = Color(0xFFF59E0B)   // Amber for warnings
+// Functional colors
+val ColorSale = AccentSale
+val ColorRent = AccentRent
+val ColorError = Color(0xFFCA4E3C)
+val ColorSuccess = Color(0xFF2D7A57)
+val ColorWarning = AccentGold
 
-// ============================================
-// DARK MODE PALETTE
-// ============================================
-// Backgrounds
-val BgDark = Color(0xFF020617)         // Slate 950 - Deep dark background
-val BgDarkSurface = Color(0xFF0F172A)  // Slate 900 - Dark surface
-val BgDarkCard = Color(0xFF1E293B)     // Slate 800 - Dark card background
+// Dark surfaces
+val BgDark = Color(0xFF12181D)
+val BgDarkSurface = Color(0xFF182129)
+val BgDarkCard = Color(0xFF1F2B35)
 
-// Text Colors (Dark Mode)
-val TextDarkPrimary = Color(0xFFF8FAFC)    // Slate 50 - Primary text
-val TextDarkSecondary = Color(0xFF94A3B8)  // Slate 400 - Secondary text
-val TextDarkHint = Color(0xFF64748B)       // Slate 500 - Hint text
-val TextDarkTertiary = Color(0xFF475569)   // Slate 600 - Tertiary text
+val TextDarkPrimary = Color(0xFFF6F4EF)
+val TextDarkSecondary = Color(0xFFB7C3CD)
+val TextDarkHint = Color(0xFF7F919F)
+val TextDarkTertiary = Color(0xFF45525D)
 
-// ============================================
-// ADDITIONAL UTILITY COLORS
-// ============================================
-val Divider = Color(0xFFE2E8F0)        // Light divider
-val DividerDark = Color(0xFF334155)    // Dark divider
-val Overlay = Color(0x1A000000)        // Semi-transparent overlay
-val OverlayDark = Color(0x4D000000)    // Darker overlay
-
-// Gradient colors for premium effects
-val GradientStart = Color(0xFF4F46E5)  // Indigo
-val GradientEnd = Color(0xFF7C3AED)    // Violet
-val GradientStartDark = Color(0xFF818CF8)
-val GradientEndDark = Color(0xFFA78BFA)
+// Utility
+val Divider = Color(0xFFE6E0D7)
+val DividerDark = Color(0xFF2C3944)
+val Overlay = Color(0x1F20303A)
+val OverlayDark = Color(0x6620303A)
+val GradientStart = Color(0xFF22445E)
+val GradientEnd = Color(0xFF527690)
+val GradientStartDark = Color(0xFF1A2E3D)
+val GradientEndDark = Color(0xFF2E4B61)

@@ -45,6 +45,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val userRepo = UserRepository(application)
     private val authRepo = AuthRepository()
     private val supabaseRepo = SupabaseRepository()
+    private val dataVersion = MutableStateFlow(0)
 
     // ─── Auth UI State ───────────────────────────────────────────────────────
     private val _authUiState = MutableStateFlow(AuthUiState())
@@ -66,6 +67,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val userId: StateFlow<String?> = userRepo.userId
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val userPhone: StateFlow<String?> = userRepo.userPhone
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     // ─── Saved properties ────────────────────────────────────────────────────
     val savedIds: StateFlow<Set<String>> = userRepo.savedPropertyIds
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
@@ -74,10 +78,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _filterState = MutableStateFlow(FilterState())
     val filterState: StateFlow<FilterState> = _filterState
 
+    init {
+        refreshRemoteContent()
+    }
+
     // ─── Home feed ───────────────────────────────────────────────────────────
     val homeProperties: StateFlow<List<Property>> = combine(
-        _filterState, savedIds
-    ) { filter, saved ->
+        _filterState, savedIds, dataVersion
+    ) { filter, saved, _ ->
         propertyRepo.getProperties(
             dealType = filter.dealType,
             propertyType = filter.propertyType,
@@ -89,14 +97,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), propertyRepo.getProperties())
 
-    val savedProperties: StateFlow<List<Property>> = savedIds.combine(savedIds) { ids, _ ->
+    val savedProperties: StateFlow<List<Property>> = combine(savedIds, dataVersion) { ids, _ ->
         propertyRepo.getProperties(savedIds = ids, onlySaved = true)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val searchResults: StateFlow<List<Property>> = _searchQuery.combine(_searchQuery) { q, _ ->
+    val searchResults: StateFlow<List<Property>> = combine(_searchQuery, dataVersion) { q, _ ->
         if (q.isBlank()) emptyList()
         else propertyRepo.getProperties(query = q)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -323,6 +331,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { userRepo.signOut() }
     }
 
+    fun updateUserName(name: String) {
+        viewModelScope.launch { userRepo.updateName(name) }
+    }
+
+    fun updateUserPhone(phone: String) {
+        viewModelScope.launch { userRepo.updatePhone(phone) }
+    }
+
+    fun deleteAccount(onDone: () -> Unit) {
+        viewModelScope.launch {
+            authRepo.signOut()
+            userRepo.signOut()
+            onDone()
+        }
+    }
+
     // ─── Legacy signIn (kept for compatibility) ───────────────────────────────
     @Deprecated("Use loginWithEmail / registerWithEmail instead")
     fun signIn(userId: String = "local_user", name: String, email: String, avatar: String = "") {
@@ -388,16 +412,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _filterState.value = FilterState()
     }
     fun postListing(property: Property) {
-        propertyRepo.addProperty(property)
+        viewModelScope.launch {
+            propertyRepo.addProperty(property)
+            dataVersion.value = dataVersion.value + 1
+        }
     }
     fun deleteProperty(id: String) {
-        propertyRepo.deleteProperty(id)
+        viewModelScope.launch {
+            propertyRepo.deleteProperty(id)
+            dataVersion.value = dataVersion.value + 1
+        }
     }
     fun getUserProperties(): List<Property> {
         val uid = userId.value ?: return emptyList()
         return propertyRepo.getUserProperties(uid)
     }
+    fun getAllProperties(): List<Property> = propertyRepo.getProperties()
     fun getPropertyById(id: String): Property? = propertyRepo.getPropertyById(id)
     fun getCities() = propertyRepo.getCities()
     fun getDistricts(cityId: Int?) = propertyRepo.getDistricts(cityId)
+
+    private fun refreshRemoteContent() {
+        viewModelScope.launch {
+            propertyRepo.refreshFromSupabase(force = true)
+            dataVersion.value = dataVersion.value + 1
+        }
+    }
 }

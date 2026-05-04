@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import uz.angrykitten.uybek.ui.navigation.Screen
@@ -27,7 +26,6 @@ import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
 
 @Composable
 fun SplashScreen(viewModel: AppViewModel, navController: NavController) {
-    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
 
     // Pulse animation
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -41,14 +39,16 @@ fun SplashScreen(viewModel: AppViewModel, navController: NavController) {
 
     LaunchedEffect(Unit) {
         delay(2000)
-        val dest = if (isLoggedIn) Screen.Home.route else Screen.Login.route
-        navController.navigate(dest) { popUpTo(Screen.Splash.route) { inclusive = true } }
+        // Always go to Home — account is optional throughout the app
+        navController.navigate(Screen.Home.route) {
+            popUpTo(Screen.Splash.route) { inclusive = true }
+        }
     }
 
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F8)),
+            .background(Color(0xFF0A0A0F)),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -56,7 +56,7 @@ fun SplashScreen(viewModel: AppViewModel, navController: NavController) {
                 Modifier
                     .scale(scale)
                     .size(96.dp)
-                    .clip(RoundedCornerShape(28.dp))
+                    .clip(RoundedCornerShape(0.dp))
                     .background(Brand),
                 contentAlignment = Alignment.Center
             ) {
@@ -68,13 +68,13 @@ fun SplashScreen(viewModel: AppViewModel, navController: NavController) {
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 28.sp,
                 letterSpacing = 4.sp,
-                color = Color(0xFF1A1A2E)
+                color = Color.White
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 "Ko'chmas mulk bozori",
                 fontSize = 14.sp,
-                color = Color(0xFF8A8A9A),
+                color = Color.White.copy(alpha = 0.5f),
                 textAlign = TextAlign.Center
             )
         }

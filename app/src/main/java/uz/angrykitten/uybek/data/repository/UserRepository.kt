@@ -19,6 +19,7 @@ class UserRepository(private val context: Context) {
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_USER_EMAIL = stringPreferencesKey("user_email")
         private val KEY_USER_AVATAR = stringPreferencesKey("user_avatar")
+        private val KEY_USER_PHONE = stringPreferencesKey("user_phone")
         private val KEY_SAVED_IDS = stringSetPreferencesKey("saved_property_ids")
     }
 
@@ -30,17 +31,19 @@ class UserRepository(private val context: Context) {
     val userName: Flow<String?> = context.dataStore.data.map { it[KEY_USER_NAME] }
     val userEmail: Flow<String?> = context.dataStore.data.map { it[KEY_USER_EMAIL] }
     val userAvatar: Flow<String?> = context.dataStore.data.map { it[KEY_USER_AVATAR] }
+    val userPhone: Flow<String?> = context.dataStore.data.map { it[KEY_USER_PHONE] }
 
     val savedPropertyIds: Flow<Set<String>> = context.dataStore.data.map {
         it[KEY_SAVED_IDS] ?: emptySet()
     }
 
-    suspend fun signIn(userId: String, name: String, email: String, avatar: String = "") {
+    suspend fun signIn(userId: String, name: String, email: String, avatar: String = "", phone: String = "") {
         context.dataStore.edit { prefs ->
             prefs[KEY_USER_ID] = userId
             prefs[KEY_USER_NAME] = name
             prefs[KEY_USER_EMAIL] = email
             prefs[KEY_USER_AVATAR] = avatar
+            if (phone.isNotBlank()) prefs[KEY_USER_PHONE] = phone
         }
     }
 
@@ -50,6 +53,7 @@ class UserRepository(private val context: Context) {
             prefs.remove(KEY_USER_NAME)
             prefs.remove(KEY_USER_EMAIL)
             prefs.remove(KEY_USER_AVATAR)
+            prefs.remove(KEY_USER_PHONE)
         }
     }
 
@@ -60,4 +64,13 @@ class UserRepository(private val context: Context) {
             prefs[KEY_SAVED_IDS] = current
         }
     }
+
+    suspend fun updateName(name: String) {
+        context.dataStore.edit { prefs -> prefs[KEY_USER_NAME] = name }
+    }
+
+    suspend fun updatePhone(phone: String) {
+        context.dataStore.edit { prefs -> prefs[KEY_USER_PHONE] = phone }
+    }
 }
+

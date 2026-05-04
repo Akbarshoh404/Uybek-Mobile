@@ -13,7 +13,12 @@
           "package_name": "uz.angrykitten.uybek"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "683703576904-xxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyChDFqiqJz3R2AtlIkzQqpGhtcUHZGau-k"
