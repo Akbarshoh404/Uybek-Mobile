@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SquareFoot
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
@@ -76,6 +75,7 @@ import kotlinx.coroutines.launch
 import uz.angrykitten.uybek.data.model.Property
 import uz.angrykitten.uybek.ui.components.DealTypeBadge
 import uz.angrykitten.uybek.ui.components.formatPrice
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.AccentSky
 import uz.angrykitten.uybek.ui.theme.Brand
@@ -98,7 +98,7 @@ fun PropertyDetailScreen(
     val property = remember(propertyId) { viewModel.getPropertyById(propertyId) }
     if (property == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("E'lon topilmadi")
+            Text(tr("E'lon topilmadi", "Listing not found", "Объявление не найдено"))
         }
         return
     }
@@ -113,7 +113,7 @@ fun PropertyDetailScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("E'lon tafsiloti", fontWeight = FontWeight.Bold)
+                        Text(tr("E'lon tafsiloti", "Property details", "Детали объявления"), fontWeight = FontWeight.Bold)
                         Text(
                             text = property.city_name,
                             style = MaterialTheme.typography.bodySmall,
@@ -123,7 +123,7 @@ fun PropertyDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Orqaga")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Orqaga", "Back", "Назад"))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -210,34 +210,13 @@ fun PropertyDetailScreen(
                                     modifier = Modifier
                                         .background(Color.White.copy(alpha = 0.94f), CircleShape)
                                         .size(46.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (isSaved) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                        contentDescription = "Saqlash",
-                                        tint = if (isSaved) BrandDark else Brand
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.size(10.dp))
-
-                                IconButton(
-                                    onClick = {
-                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(Intent.EXTRA_TEXT, "${property.title} - ${property.city_name}")
-                                        }
-                                        context.startActivity(Intent.createChooser(shareIntent, "Ulashish"))
-                                    },
-                                    modifier = Modifier
-                                        .background(Color.White.copy(alpha = 0.94f), CircleShape)
-                                        .size(46.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = "Ulashish",
-                                        tint = Brand
-                                    )
-                                }
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSaved) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                            contentDescription = "Saqlash",
+                                            tint = if (isSaved) BrandDark else Brand
+                                        )
+                                    }
                             }
 
                             Column(
@@ -254,7 +233,7 @@ fun PropertyDetailScreen(
                                     Text(
                                         text = formatPrice(property.price, property.currency, property.price_period),
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                        color = BrandDark,
+                                        color = MaterialTheme.colorScheme.primary,
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Black
                                     )
@@ -325,7 +304,7 @@ fun PropertyDetailScreen(
 
             item {
                 Text(
-                    text = "Mulk tafsilotlari",
+                    text = tr("Mulk tafsilotlari", "Property details", "Детали недвижимости"),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -363,7 +342,7 @@ fun PropertyDetailScreen(
             item {
                 DetailSectionCard {
                     Text(
-                        text = "Tavsif",
+                        text = tr("Tavsif", "Description", "Описание"),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -380,7 +359,7 @@ fun PropertyDetailScreen(
             item {
                 DetailSectionCard {
                     Text(
-                        text = "Sotuvchi",
+                        text = tr("Sotuvchi", "Seller", "Продавец"),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -406,7 +385,7 @@ fun PropertyDetailScreen(
                         ) {
                             Icon(Icons.Default.Phone, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Qo'ng'iroq", color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(tr("Qo'ng'iroq", "Call", "Позвонить"), color = Color.White, fontWeight = FontWeight.Bold)
                         }
 
                         if (property.seller_whatsapp.isNotBlank()) {
@@ -440,7 +419,7 @@ fun PropertyDetailScreen(
                         ) {
                             Icon(Icons.Default.Chat, contentDescription = null, tint = Brand)
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Ilova orqali yozish", color = Brand, fontWeight = FontWeight.Bold)
+                            Text(tr("Ilova orqali yozish", "Message in app", "Написать в приложении"), color = Brand, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

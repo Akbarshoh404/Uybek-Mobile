@@ -1,236 +1,174 @@
-# 🏠 Uybek — O'zbekiston Ko'chmas Mulk Ilovasi
+# Uybek
 
-<p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" width="120" alt="Uybek Logo"/>
-</p>
+Uybek is an Android real-estate app for the Uzbekistan market, built with Jetpack Compose, Firebase, and Supabase. The app already supports browsing listings, search, favorites, seller profiles, posting, chat, authentication, settings, FAQ, and privacy screens.
 
-<p align="center">
-  <strong>Jetpack Compose • Firebase • Supabase • MVVM</strong>
-</p>
+## Current stack
 
----
+- Kotlin + Jetpack Compose + Material 3
+- Firebase Auth for email, phone OTP, and Google sign-in
+- Firebase Realtime Database for chat
+- Supabase for property and user data
+- MVVM with a single `AppViewModel`
 
-## 📌 Loyiha haqida
+## Main screens
 
-**Uybek** — O'zbekiston ko'chmas mulk bozori uchun zamonaviy Android ilovasi. Foydalanuvchilar kvartiralar, uylar, tijorat va yer maydonlarini sotish yoki ijaraga berish uchun e'lon joylashtirishlari va real vaqt rejimida sotuvchilar bilan muloqot qilishlari mumkin.
+- Home feed with filters and listing cards
+- Search with filter bottom sheet
+- Property detail
+- Seller profile
+- Chat list and chat detail
+- Post listing flow
+- Saved listings
+- Profile and settings
+- Login and register
+- FAQ and privacy policy
 
----
+## UI direction in this version
 
-## ✨ Asosiy imkoniyatlar
+This version uses a rounded-card visual system across the app:
 
-| Funksiya | Tavsif |
-|----------|--------|
-| 🔐 **Autentifikatsiya** | Email/parol, telefon OTP, Google Sign-In (Firebase Auth) |
-| 🏘️ **E'lonlar** | Ko'chmas mulk e'lonlarini ko'rish, qidirish va filtrlash |
-| ➕ **E'lon berish** | 5 bosqichli shakl: muomala → tafsilotlar → joylashuv → narx/aloqa → ko'rib chiqish |
-| 💬 **Chat** | Firebase Realtime Database orqali foydalanuvchilar o'rtasida real vaqt chat |
-| 👤 **Sotuvchi profili** | Sotuvchining barcha e'lonlari va aloqa ma'lumotlari |
-| ❤️ **Sevimlilar** | E'lonlarni saqlash va boshqarish |
-| 🌙 **Dark/Light rejim** | Tizim rejimiga moslashuv + qo'lda almashtirish |
-| ⚙️ **Sozlamalar** | Ism, telefon o'zgartirish; akkauntni o'chirish |
-| 📖 **FAQ** | Ko'p so'raladigan savollar (akkordeon UI) |
-| 🔒 **Maxfiylik** | Maxfiylik siyosati ekrani |
-| 📱 **Telegram** | Sotuvchi bilan Telegram orqali bog'lanish |
+- Consistent border radius on cards, fields, buttons, dialogs, and hero sections
+- Unified listing cards across home, saved, search, and seller profile
+- Cleaner dark-theme color handling for prices and important accents
+- Seller profile listings now use the same presentation style as the main feed
+- Home no longer exposes the cramped 3-column card layout
+- Property detail no longer shows the share icon
 
----
+## Project structure
 
-## 🏗️ Arxitektura
-
-```
-uz.angrykitten.uybek/
-├── data/
-│   ├── model/          # Property, City, District, AppData
-│   └── repository/     # PropertyRepository, UserRepository, AuthRepository, SupabaseRepository
-├── ui/
-│   ├── components/     # Reusable Compose components
-│   ├── navigation/     # AppNavGraph, Screen, BottomNavItem
-│   ├── screens/        # All screen composables
-│   ├── theme/          # Color, Typography, Theme (dark/light)
-│   └── viewmodel/      # AppViewModel (MVVM)
-└── MainActivity.kt     # Entry point, theme state management
-```
-
-### Navigatsiya oqimi
-```
-Splash → Home (default)
-       ↘ Login / Register
-Home → PropertyDetail → SellerProfile
-                      → ChatDetail
-Bottom Nav: Home | Chat | Post | Saved | Profile
-Profile → Settings → (edit name, phone, delete account)
-        → FAQ
-        → Privacy Policy
+```text
+app/src/main/java/uz/angrykitten/uybek/
+  MainActivity.kt
+  data/
+    model/
+    repository/
+  ui/
+    components/
+    navigation/
+    screens/
+    theme/
+    viewmodel/
 ```
 
----
+## Running the app
 
-## 🔧 O'rnatish
+### Requirements
 
-### 1. Talablar
-- Android Studio Hedgehog+
+- Android Studio
 - JDK 11+
-- Firebase loyihasi (Authentication + Realtime Database)
-- Supabase loyihasi (PostgreSQL)
+- Firebase project with Auth and Realtime Database
+- Supabase project with the required tables
 
-### 2. Klonlash
-```bash
-git clone https://github.com/yourusername/Uybek.git
-cd Uybek
-```
+### Local setup
 
-### 3. Firebase sozlash
-1. [Firebase Console](https://console.firebase.google.com) → yangi loyiha yarating
-2. Android ilovasi qo'shing: `uz.angrykitten.uybek`
-3. `google-services.json` ni `app/` papkasiga nusxalang
-4. Authentication → Email/Password, Phone, Google → yoqing
-5. **Realtime Database** → yarating, qoidalar:
-```json
-{
-  "rules": {
-    "chats": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    }
-  }
-}
-```
+Add values to `local.properties`:
 
-### 4. Supabase sozlash
-1. [supabase.com](https://supabase.com) → yangi loyiha
-2. `local.properties` ga qo'shing:
 ```properties
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 ```
-3. SQL schema (Supabase SQL Editor):
-```sql
-create table properties (
-  id uuid primary key,
-  user_id text not null,
-  title text not null,
-  description text,
-  deal_type text not null,         -- 'sale' | 'rent'
-  property_type text not null,     -- 'apartment' | 'house' | 'commercial' | 'land'
-  city_id int, city_name text,
-  district_id int, district_name text,
-  address text,
-  latitude float8, longitude float8,
-  price float8 not null,
-  currency text default 'USD',
-  price_period text,               -- 'month' | 'year' | null
-  area_m2 float8,
-  bedrooms int, bathrooms int,
-  floor int, total_floors int,
-  year_built int,
-  is_new_build boolean default false,
-  is_active boolean default true,
-  views_count int default 0,
-  images text[] default '{}',
-  seller_name text,
-  seller_phone text,
-  seller_whatsapp text,            -- used for Telegram username
-  seller_avatar text,
-  created_at timestamptz default now()
-);
 
--- Enable RLS
-alter table properties enable row level security;
-create policy "Public read" on properties for select using (true);
-create policy "Auth insert" on properties for insert with check (auth.role() = 'authenticated');
-create policy "Owner update" on properties for update using (auth.uid()::text = user_id);
-```
+Place `google-services.json` inside `app/`.
 
-### 5. Ishga tushirish
+### Build
+
 ```bash
 ./gradlew assembleDebug
-# yoki Android Studio → Run
 ```
 
----
+## Data notes
 
-## 📦 Asosiy bog'liqliklar
+- Listings can be loaded from Supabase.
+- The repository still falls back to `app/src/main/assets/sample_data.json` when remote loading fails.
+- New listings are inserted locally first and then synced to Supabase.
 
-| Kutubxona | Versiya | Maqsad |
-|-----------|---------|--------|
-| Jetpack Compose BOM | 2024.09.00 | UI framework |
-| Navigation Compose | 2.9.0 | Ekranlar orasida navigatsiya |
-| Firebase Auth | 24.0.1 | Autentifikatsiya |
-| Firebase Database | 21.0.0 | Real vaqt chat |
-| Supabase BOM | 3.0.3 | Ko'chmas mulk ma'lumotlari |
-| Ktor Client | 3.0.3 | HTTP (Kotlin 2.0.21 mos) |
-| Coil Compose | 2.6.0 | Rasm yuklash |
-| DataStore | 1.1.4 | Lokal foydalanuvchi ma'lumotlari |
-| Material Icons Extended | — | Ikonkalar |
+## What still needs to be done for a full production version
 
----
+This section is based on the current codebase, not generic advice.
 
-## 💬 Chat arxitekturasi
+### 1. Listing management must be completed
 
-Chat funksiyasi **Firebase Realtime Database** orqali ishlaydi:
+- `MyListingsScreen` still shows a `Tahrirlash` button without an implemented edit flow.
+- `PostListingScreen` currently posts a hardcoded placeholder image URL instead of real uploaded media.
+- Listing creation needs real image upload, validation feedback, progress states, and edit/update support.
 
+### 2. Backend consistency needs hardening
+
+- The app still relies on `sample_data.json` as a fallback source.
+- Property refresh is mostly pull-based and local-state-driven, not fully reactive to backend updates.
+- Delete and write flows need clearer success/error reporting and stronger sync conflict handling.
+
+### 3. Account lifecycle is not fully complete yet
+
+- `deleteAccount()` currently signs the user out locally but does not show a full backend cleanup flow.
+- User profile editing is limited to name and phone.
+- A full version should add avatar updates, account recovery, session management, and server-side delete handling.
+
+### 4. Trust and moderation features are still missing
+
+- No reporting flow for fake or abusive listings
+- No listing moderation queue or admin review tools
+- No verified-agent or verified-owner states
+- No fraud-prevention signals, audit logs, or abuse limits
+
+### 5. Search and discovery can be much stronger
+
+- Search is still mainly local text matching plus basic filters.
+- A full version should add district/city drill-down, sorting, map search, nearby search, recent searches, and recommendation logic.
+- Home should eventually support promoted inventory, editorial collections, and personalization.
+
+### 6. Real media and listing quality systems are needed
+
+- No gallery upload pipeline
+- No image compression/cropping flow
+- No cover-photo selection
+- No listing completeness score
+- No mandatory moderation around photo quality or duplicate detection
+
+### 7. Chat is functional but still basic
+
+- No unread counts
+- No delivery/read states
+- No attachments, image sharing, or voice notes
+- No blocking/reporting tools inside chat
+- No push notifications for new messages
+
+### 8. Product polish and reliability need another pass
+
+- Some screens are still feature-complete visually but not functionally complete.
+- Empty, error, loading, and offline states should be standardized across every data-driven screen.
+- Theme preference is currently local to the running app session and should be persisted explicitly.
+
+### 9. Legal and operational readiness is not finished
+
+- Privacy and FAQ pages exist in-app, but production release needs final legal copy and public URLs.
+- Support, contact, and escalation flows should be real and connected to operations.
+- Analytics, crash reporting, release monitoring, and backup/recovery processes need to be added.
+
+### 10. Business features for a real marketplace are still missing
+
+- Paid promotions or featured listings
+- Agent/business accounts
+- Lead tracking and seller analytics
+- Saved search alerts
+- Notification campaigns
+- Admin dashboards and content operations
+
+## Recommended next implementation order
+
+1. Real media upload for listings
+2. Edit listing flow
+3. Proper backend-backed account deletion
+4. Notifications and unread chat states
+5. Map search and better discovery
+6. Moderation/reporting tools
+7. Analytics, crash reporting, and release hardening
+
+## Verification
+
+Latest verified local build:
+
+```bash
+./gradlew assembleDebug
 ```
-/chats
-  /{userId1}_{userId2}          ← sorted, deterministic chat ID
-    /participants
-      /{userId1}/name: "Ali"
-      /{userId2}/name: "Bobur"
-    /messages
-      /{msgId}
-        senderId: "uid1"
-        senderName: "Ali"
-        text: "Salom!"
-        timestamp: 1714900000000
-```
-
-Chat ID = ikki user ID ni saralangan holda `_` bilan birlashtirish:
-```kotlin
-val chatId = listOf(myId, otherId).sorted().joinToString("_")
-```
-
----
-
-## 🎨 Dizayn tizimi
-
-| Token | Qiymat |
-|-------|--------|
-| Brand (asosiy rang) | `#7B61FF` |
-| Gradient Start | `#7B61FF` |
-| Gradient End | `#5E3FC8` |
-| Dark background | `#0A0A0F` |
-| Light background | System default |
-| Typography | Material 3 defaults |
-
-Dark/Light rejim `isSystemInDarkTheme()` orqali tizim sozlamasiga moslashadi. Foydalanuvchi profil yoki sozlamalar ekranidan qo'lda almashtirishiga ham imkon beradi.
-
----
-
-## 📂 Screens
-
-| Ekran | Fayl | Tavsif |
-|-------|------|--------|
-| Splash | `SplashScreen.kt` | Kirish animatsiyasi |
-| Home | `HomeScreen.kt` | E'lonlar lenti + filtrlar |
-| Property Detail | `PropertyDetailScreen.kt` | E'lon tafsilotlari |
-| Seller Profile | `SellerProfileScreen.kt` | Sotuvchi profili va e'lonlari |
-| Chat List | `ChatScreens.kt` | Barcha suhbatlar |
-| Chat Detail | `ChatScreens.kt` | Real vaqt xabarlar |
-| Post Listing | `PostListingScreen.kt` | 5 bosqichli e'lon berish |
-| Saved | `SavedScreen.kt` | Sevimli e'lonlar |
-| Profile | `ProfileScreen.kt` | Foydalanuvchi profili |
-| Settings | `SettingsScreen.kt` | Sozlamalar |
-| Login/Register | `AuthScreens.kt` | Firebase autentifikatsiya |
-| FAQ | `InfoScreens.kt` | Ko'p so'raladigan savollar |
-| Privacy Policy | `InfoScreens.kt` | Maxfiylik siyosati |
-
----
-
-## 🪪 Litsenziya
-
-MIT License — bepul foydalanishingiz mumkin.
-
----
-
-<p align="center">Made with ❤️ in Uzbekistan</p>

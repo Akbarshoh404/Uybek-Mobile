@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -41,7 +42,7 @@ fun MyListingsScreen(viewModel: AppViewModel, navController: NavController) {
                 title = { Text("Mening e'lonlarim", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, "Orqaga")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Orqaga")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -73,7 +74,7 @@ fun MyListingsScreen(viewModel: AppViewModel, navController: NavController) {
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = { navController.navigate(Screen.PostListing.route) },
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Brand)
                 ) {
                     Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
@@ -123,7 +124,7 @@ fun MyListingsScreen(viewModel: AppViewModel, navController: NavController) {
                             OutlinedButton(
                                 onClick = {},
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(0.dp),
+                                shape = RoundedCornerShape(18.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                             ) {
                                 Icon(Icons.Default.Edit, null, modifier = Modifier.size(14.dp))
@@ -133,7 +134,7 @@ fun MyListingsScreen(viewModel: AppViewModel, navController: NavController) {
                             OutlinedButton(
                                 onClick = { showDeleteDialog = true },
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(0.dp),
+                                shape = RoundedCornerShape(18.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE53935)),
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE53935).copy(alpha = 0.5f))

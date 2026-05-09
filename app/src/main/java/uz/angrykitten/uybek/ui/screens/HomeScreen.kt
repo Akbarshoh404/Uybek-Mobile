@@ -37,6 +37,7 @@ import androidx.navigation.NavController
 import uz.angrykitten.uybek.ui.components.ListingLayoutToggle
 import uz.angrykitten.uybek.ui.components.PropertyCard
 import uz.angrykitten.uybek.ui.components.PropertyGridCard
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.Brand
 import uz.angrykitten.uybek.ui.theme.GradientEnd
@@ -52,11 +53,16 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
     var columns by rememberSaveable { mutableIntStateOf(1) }
+    val layoutColumns = if (columns == 1) 1 else 2
 
-    val dealFilters = listOf(null to "Barchasi", "sale" to "Sotiladi", "rent" to "Ijaraga")
+    val dealFilters = listOf(
+        null to tr("Barchasi", "All", "Все"),
+        "sale" to tr("Sotiladi", "For sale", "Продажа"),
+        "rent" to tr("Ijaraga", "For rent", "Аренда")
+    )
 
     LazyVerticalGrid(
-        columns = GridCells.Fixed(columns),
+        columns = GridCells.Fixed(layoutColumns),
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
@@ -72,13 +78,13 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
             ) {
                 Column {
                     Text(
-                        text = "Xush kelibsiz",
+                        text = tr("Xush kelibsiz", "Welcome", "Добро пожаловать"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (isLoggedIn && userName != null) "${userName!!.split(" ").first()}!" else "O'zbekiston",
+                        text = if (isLoggedIn && userName != null) "${userName!!.split(" ").first()}!" else tr("O'zbekiston", "Uzbekistan", "Узбекистан"),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
@@ -88,10 +94,10 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
                     onClick = {},
                     colors = IconButtonDefaults.filledIconButtonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = Brand
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Outlined.Notifications, contentDescription = "Bildirishnomalar")
+                    Icon(Icons.Outlined.Notifications, contentDescription = tr("Bildirishnomalar", "Notifications", "Уведомления"))
                 }
             }
         }
@@ -108,9 +114,9 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = Brand)
+                    Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = "Ko'chmas mulk qidirish...",
+                        text = tr("Ko'chmas mulk qidirish...", "Search properties...", "Поиск недвижимости..."),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
@@ -122,7 +128,7 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
                         Icon(
                             Icons.Default.Tune,
                             contentDescription = null,
-                            tint = Brand,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(10.dp)
                         )
                     }
@@ -147,13 +153,13 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth(0.72f)) {
                         Text(
-                            "Uybek Select",
+                            tr("Uybek Select", "Uybek Select", "Uybek Select"),
                             style = MaterialTheme.typography.labelLarge,
                             color = Color.White.copy(alpha = 0.8f)
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            "Minimalist tanlov, aniq filtr, ishonchli e'lonlar.",
+                            tr("Minimalist tanlov, aniq filtr, ishonchli e'lonlar.", "Curated homes, clear filters, trusted listings.", "Отобранные объекты, точные фильтры, надежные объявления."),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Black,
                             color = Color.White
@@ -197,19 +203,19 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
             ) {
                 Column {
                     Text(
-                        "E'lonlar",
+                        tr("E'lonlar", "Listings", "Объявления"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        "${properties.size} ta mos natija",
+                        tr("${properties.size} ta mos natija", "${properties.size} matching results", "${properties.size} подходящих результатов"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 ListingLayoutToggle(
-                    columns = columns,
+                    columns = layoutColumns,
                     onColumnsChange = { columns = it }
                 )
             }
@@ -225,7 +231,7 @@ fun HomeScreen(viewModel: AppViewModel, navController: NavController) {
                     visible = true,
                     enter = slideInVertically(tween(400)) { it / 3 } + fadeIn(tween(400))
                 ) {
-                    if (columns == 1) {
+                    if (layoutColumns == 1) {
                         PropertyCard(
                             property = property,
                             isSaved = property.id in savedIds,
@@ -268,19 +274,19 @@ private fun EmptyHomeState() {
                 Icons.Default.SearchOff,
                 contentDescription = null,
                 modifier = Modifier.padding(24.dp).size(36.dp),
-                tint = Brand
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            "E'lonlar topilmadi",
+            tr("E'lonlar topilmadi", "No listings found", "Объявления не найдены"),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            "Boshqa filtrlarni sinab ko'ring",
+            tr("Boshqa filtrlarni sinab ko'ring", "Try different filters", "Попробуйте другие фильтры"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

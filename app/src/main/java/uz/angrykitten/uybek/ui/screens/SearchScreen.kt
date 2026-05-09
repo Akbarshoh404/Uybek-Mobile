@@ -40,6 +40,7 @@ import androidx.navigation.NavController
 import uz.angrykitten.uybek.ui.components.ListingLayoutToggle
 import uz.angrykitten.uybek.ui.components.PropertyCard
 import uz.angrykitten.uybek.ui.components.PropertyGridCard
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.Brand
 import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
@@ -55,13 +56,14 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
 
     var showFilterSheet by remember { mutableStateOf(false) }
     var columns by rememberSaveable { mutableIntStateOf(2) }
+    val layoutColumns = if (columns == 1) 1 else 2
 
     val propertyTypes = listOf(
-        null to "Barchasi",
-        "apartment" to "Kvartira",
-        "house" to "Uy",
-        "commercial" to "Tijorat",
-        "land" to "Yer"
+        null to tr("Barchasi", "All", "Все"),
+        "apartment" to tr("Kvartira", "Apartment", "Квартира"),
+        "house" to tr("Uy", "House", "Дом"),
+        "commercial" to tr("Tijorat", "Commercial", "Коммерция"),
+        "land" to tr("Yer", "Land", "Участок")
     )
 
     Column(
@@ -82,20 +84,20 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                         onClick = { navController.popBackStack() },
                         colors = IconButtonDefaults.filledIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = Brand
+                            contentColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Orqaga")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Orqaga", "Back", "Назад"))
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Qidiruv",
+                            tr("Qidiruv", "Search", "Поиск"),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            "Natijalarni uslub va zichlik bilan boshqaring",
+                            tr("Natijalarni uslub va zichlik bilan boshqaring", "Control result style and density", "Управляйте видом и плотностью результатов"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -112,9 +114,9 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.setSearchQuery(it) },
-                        placeholder = { Text("Shahar, tuman yoki kalit so'z...") },
+                        placeholder = { Text(tr("Shahar, tuman yoki kalit so'z...", "City, district or keyword...", "Город, район или ключевое слово...")) },
                         leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = Brand)
+                            Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         trailingIcon = {
                             AnimatedVisibility(
@@ -141,7 +143,7 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                         modifier = Modifier.size(56.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = Brand)
                     ) {
-                        Icon(Icons.Default.Tune, contentDescription = "Filter", tint = Color.White)
+                        Icon(Icons.Default.Tune, contentDescription = tr("Filter", "Filter", "Фильтр"), tint = Color.White)
                     }
                 }
 
@@ -167,7 +169,7 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
             searchResults.isEmpty() -> SearchNoResultsState(searchQuery)
             else -> {
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(columns),
+                    columns = GridCells.Fixed(layoutColumns),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -180,12 +182,12 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "${searchResults.size} ta natija topildi",
+                                tr("${searchResults.size} ta natija topildi", "${searchResults.size} results found", "Найдено результатов: ${searchResults.size}"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            ListingLayoutToggle(columns = columns, onColumnsChange = { columns = it })
+                            ListingLayoutToggle(columns = layoutColumns, onColumnsChange = { columns = it })
                         }
                     }
 
@@ -194,7 +196,7 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                             visible = true,
                             enter = slideInVertically(tween(350)) { it / 3 } + fadeIn(tween(350))
                         ) {
-                            if (columns == 1) {
+                            if (layoutColumns == 1) {
                                 PropertyCard(
                                     property = property,
                                     isSaved = property.id in savedIds,
@@ -242,19 +244,19 @@ private fun SearchEmptyState() {
                 Icons.Default.Search,
                 contentDescription = null,
                 modifier = Modifier.padding(24.dp).size(34.dp),
-                tint = Brand
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Spacer(Modifier.height(18.dp))
         Text(
-            "Ko'chmas mulk qidiring",
+            tr("Ko'chmas mulk qidiring", "Search real estate", "Ищите недвижимость"),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Shahar, tuman yoki mulk nomini kiriting",
+            tr("Shahar, tuman yoki mulk nomini kiriting", "Enter a city, district, or property name", "Введите город, район или название объекта"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -274,12 +276,12 @@ private fun SearchNoResultsState(searchQuery: String) {
                 Icons.Default.SearchOff,
                 contentDescription = null,
                 modifier = Modifier.padding(24.dp).size(34.dp),
-                tint = Brand
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Spacer(Modifier.height(18.dp))
         Text(
-            "'$searchQuery' bo'yicha e'lon topilmadi",
+            tr("'$searchQuery' bo'yicha e'lon topilmadi", "No listings found for '$searchQuery'", "Объявления по запросу '$searchQuery' не найдены"),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -287,7 +289,7 @@ private fun SearchNoResultsState(searchQuery: String) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Boshqa kalit so'z yoki filtrlarni sinab ko'ring",
+            tr("Boshqa kalit so'z yoki filtrlarni sinab ko'ring", "Try another keyword or filter", "Попробуйте другой запрос или фильтр"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -321,42 +323,46 @@ fun ModernFilterBottomSheet(viewModel: AppViewModel, onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Filtrlar", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                Text(tr("Filtrlar", "Filters", "Фильтры"), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = null) }
             }
 
             Spacer(Modifier.height(18.dp))
-            FilterSection("Muomala turi")
+            FilterSection(tr("Muomala turi", "Deal type", "Тип сделки"))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(null to "Barchasi", "sale" to "Sotiladi", "rent" to "Ijaraga").forEach { (type, label) ->
+                listOf(
+                    null to tr("Barchasi", "All", "Все"),
+                    "sale" to tr("Sotiladi", "For sale", "Продажа"),
+                    "rent" to tr("Ijaraga", "For rent", "Аренда")
+                ).forEach { (type, label) ->
                     AnimatedFilterChip(selected = selectedDeal == type, label = label, onClick = { selectedDeal = type })
                 }
             }
 
             Spacer(Modifier.height(18.dp))
-            FilterSection("Mulk turi")
+            FilterSection(tr("Mulk turi", "Property type", "Тип недвижимости"))
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    null to "Barchasi",
-                    "apartment" to "Kvartira",
-                    "house" to "Uy",
-                    "commercial" to "Tijorat",
-                    "land" to "Yer"
+                    null to tr("Barchasi", "All", "Все"),
+                    "apartment" to tr("Kvartira", "Apartment", "Квартира"),
+                    "house" to tr("Uy", "House", "Дом"),
+                    "commercial" to tr("Tijorat", "Commercial", "Коммерция"),
+                    "land" to tr("Yer", "Land", "Участок")
                 ).forEach { (type, label) ->
                     AnimatedFilterChip(selected = selectedType == type, label = label, onClick = { selectedType = type })
                 }
             }
 
             Spacer(Modifier.height(18.dp))
-            FilterSection("Narx diapazoni (USD)")
+            FilterSection(tr("Narx diapazoni (USD)", "Price range (USD)", "Диапазон цен (USD)"))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = minPrice,
                     onValueChange = { minPrice = it.filter(Char::isDigit) },
-                    label = { Text("Min") },
+                    label = { Text(tr("Min", "Min", "Мин")) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(18.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
@@ -365,7 +371,7 @@ fun ModernFilterBottomSheet(viewModel: AppViewModel, onDismiss: () -> Unit) {
                 OutlinedTextField(
                     value = maxPrice,
                     onValueChange = { maxPrice = it.filter(Char::isDigit) },
-                    label = { Text("Max") },
+                    label = { Text(tr("Max", "Max", "Макс")) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(18.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
@@ -374,9 +380,9 @@ fun ModernFilterBottomSheet(viewModel: AppViewModel, onDismiss: () -> Unit) {
             }
 
             Spacer(Modifier.height(18.dp))
-            FilterSection("Xonalar soni")
+            FilterSection(tr("Xonalar soni", "Bedrooms", "Комнаты"))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(null to "Barchasi", 1 to "1", 2 to "2", 3 to "3", 4 to "4+").forEach { (b, label) ->
+                listOf(null to tr("Barchasi", "All", "Все"), 1 to "1", 2 to "2", 3 to "3", 4 to "4+").forEach { (b, label) ->
                     AnimatedFilterChip(selected = selectedBedrooms == b, label = label, onClick = { selectedBedrooms = b })
                 }
             }
@@ -391,7 +397,7 @@ fun ModernFilterBottomSheet(viewModel: AppViewModel, onDismiss: () -> Unit) {
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(18.dp)
                 ) {
-                    Text("Tozalash", fontWeight = FontWeight.SemiBold)
+                    Text(tr("Tozalash", "Reset", "Сброс"), fontWeight = FontWeight.SemiBold)
                 }
                 Button(
                     onClick = {
@@ -405,7 +411,7 @@ fun ModernFilterBottomSheet(viewModel: AppViewModel, onDismiss: () -> Unit) {
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Brand)
                 ) {
-                    Text("Qo'llash", fontWeight = FontWeight.SemiBold)
+                    Text(tr("Qo'llash", "Apply", "Применить"), fontWeight = FontWeight.SemiBold)
                 }
             }
         }

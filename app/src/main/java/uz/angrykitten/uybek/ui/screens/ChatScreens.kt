@@ -66,7 +66,9 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
+import uz.angrykitten.uybek.ui.theme.AccentGold
 import uz.angrykitten.uybek.ui.theme.AccentSky
 import uz.angrykitten.uybek.ui.theme.Brand
 import uz.angrykitten.uybek.ui.theme.BrandLight
@@ -100,7 +102,11 @@ fun ChatScreen(viewModel: AppViewModel, navController: NavController) {
     val currentUserId by viewModel.userId.collectAsStateWithLifecycle()
 
     if (!isLoggedIn || currentUserId == null) {
-        GuestPromptScreen("Chat", "Chatdan foydalanish uchun tizimga kiring", navController)
+        GuestPromptScreen(
+            tr("Chat", "Chats", "Чаты"),
+            tr("Chatdan foydalanish uchun tizimga kiring", "Sign in to use chats", "Войдите, чтобы пользоваться чатами"),
+            navController
+        )
         return
     }
 
@@ -155,12 +161,19 @@ fun ChatScreen(viewModel: AppViewModel, navController: NavController) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Xabarlar", fontWeight = FontWeight.Bold)
+                        Text(tr("Xabarlar", "Messages", "Сообщения"), fontWeight = FontWeight.Bold)
                         Text(
-                            text = "Sotuvchilar va xaridorlar bilan suhbat",
+                            text = tr("Sotuvchilar va xaridorlar bilan suhbat", "Talk to sellers and buyers", "Общайтесь с продавцами и покупателями"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                },
+                navigationIcon = {
+                    if (navController.previousBackStackEntry != null) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Orqaga", "Back", "Назад"))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -237,9 +250,9 @@ private fun EmptyChatState(modifier: Modifier = Modifier) {
                         modifier = Modifier.size(34.dp)
                     )
                 }
-                Text("Hali xabarlar yo'q", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(tr("Hali xabarlar yo'q", "No messages yet", "Сообщений пока нет"), fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 Text(
-                    text = "E'lon sahifasidan sotuvchi bilan suhbat boshlashingiz mumkin.",
+                    text = tr("E'lon sahifasidan sotuvchi bilan suhbat boshlashingiz mumkin.", "You can start a conversation from a listing page.", "Вы можете начать диалог со страницы объявления."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -268,18 +281,18 @@ private fun ChatPreviewCard(preview: ChatPreview, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Brand.copy(alpha = 0.18f), AccentSky.copy(alpha = 0.32f))
-                        )
-                    ),
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(AccentGold.copy(alpha = 0.24f), AccentSky.copy(alpha = 0.34f))
+                            )
+                        ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = initialFor(preview.otherUserName),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Black,
-                    color = Brand
+                    color = AccentGold
                 )
             }
 
@@ -293,7 +306,7 @@ private fun ChatPreviewCard(preview: ChatPreview, onClick: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = preview.lastMessage.ifBlank { "Suhbat boshlandi" },
+                    text = preview.lastMessage.ifBlank { tr("Suhbat boshlandi", "Conversation started", "Диалог начат") },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -315,7 +328,7 @@ private fun ChatPreviewCard(preview: ChatPreview, onClick: () -> Unit) {
                         .padding(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "Ochish",
+                        text = tr("Ochish", "Open", "Открыть"),
                         style = MaterialTheme.typography.labelSmall,
                         color = Brand,
                         fontWeight = FontWeight.Bold
@@ -410,19 +423,19 @@ fun ChatDetailScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(BrandLight),
+                                .background(AccentGold.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = initialFor(otherUserName),
                                 fontWeight = FontWeight.Black,
-                                color = Brand
+                                color = AccentGold
                             )
                         }
                         Column {
                             Text(otherUserName, fontWeight = FontWeight.Bold)
                             Text(
-                                text = "Uybek chat",
+                                text = tr("Uybek chat", "Uybek chat", "Чат Uybek"),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -457,7 +470,7 @@ fun ChatDetailScreen(
                         value = inputText,
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Xabar yozing...") },
+                        placeholder = { Text(tr("Xabar yozing...", "Write a message...", "Напишите сообщение...")) },
                         shape = RoundedCornerShape(22.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Brand,
@@ -477,7 +490,7 @@ fun ChatDetailScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Yuborish",
+                            contentDescription = tr("Yuborish", "Send", "Отправить"),
                             tint = Color.White
                         )
                     }
@@ -520,7 +533,7 @@ fun ChatDetailScreen(
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "$otherUserName bilan suhbat boshlang",
+                                text = tr("$otherUserName bilan suhbat boshlang", "Start a chat with $otherUserName", "Начните чат с $otherUserName"),
                                 fontWeight = FontWeight.Bold
                             )
                         }

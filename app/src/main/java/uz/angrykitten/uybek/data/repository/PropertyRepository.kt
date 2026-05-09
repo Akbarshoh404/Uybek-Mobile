@@ -1,32 +1,28 @@
 package uz.angrykitten.uybek.data.repository
 
 import android.content.Context
-import com.google.gson.Gson
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import uz.angrykitten.uybek.data.SupabaseClientProvider
 import uz.angrykitten.uybek.data.model.AppData
 import uz.angrykitten.uybek.data.model.City
 import uz.angrykitten.uybek.data.model.District
 import uz.angrykitten.uybek.data.model.Property
+import java.util.UUID
 
 class PropertyRepository(private val context: Context) {
 
-    private val gson = Gson()
     private val client = SupabaseClientProvider.client
     private var appData: AppData? = null
     private var loadedFromSupabase = false
 
-    private fun loadLocalData(): AppData {
-        val json = context.assets.open("sample_data.json").bufferedReader().use { it.readText() }
-        return gson.fromJson(json, AppData::class.java)
-    }
-
-    private fun currentData(): AppData {
-        if (appData == null) {
-            appData = loadLocalData()
-        }
-        return appData!!
-    }
+    /** Returns cached data or an empty placeholder — never crashes. */
+    private fun currentData(): AppData =
+        appData ?: AppData(cities = emptyList(), districts = emptyList(), properties = emptyList())
 
     suspend fun refreshFromSupabase(force: Boolean = false): Result<Unit> {
         if (!force && loadedFromSupabase && appData != null) {
@@ -44,8 +40,9 @@ class PropertyRepository(private val context: Context) {
             loadedFromSupabase = true
             Result.success(Unit)
         } catch (e: Exception) {
+            // Keep whatever data we already have; if nothing, stay empty rather than crash
             if (appData == null) {
-                appData = loadLocalData()
+                appData = AppData(cities = emptyList(), districts = emptyList(), properties = emptyList())
             }
             loadedFromSupabase = false
             Result.failure(e)
@@ -129,4 +126,32 @@ class PropertyRepository(private val context: Context) {
 
     fun getUserProperties(userId: String): List<Property> =
         currentData().properties.filter { it.user_id == userId }
+
+    suspend fun uploadImage(uri: Uri): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: throw IllegalArgumentException("Could not read image bytes")
+
+            // Detect MIME type so Supabase stores the file correctly
+            val mimeType = context.contentResolver.getType(uri)
+                ?: MimeTypeMap.getSingleton()
+                    .getMimeTypeFromExtension(MimeTypeMap.getFileExtensionFromUrl(uri.toString()))
+                ?: "image/jpeg"
+            val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "jpg"
+            // Path MUST be "uploads/<file>" to satisfy the RLS INSERT policy:
+            // (storage.foldername(name))[1] = 'uploads'
+            val objectPath = "uploads/${UUID.randomUUID()}.$ext"
+
+            val bucket = client.storage["Houses"]
+            bucket.upload(objectPath, bytes) {
+                upsert = false
+                contentType = io.ktor.http.ContentType.parse(mimeType)
+            }
+
+            val publicUrl = bucket.publicUrl(objectPath)
+            Result.success(publicUrl)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

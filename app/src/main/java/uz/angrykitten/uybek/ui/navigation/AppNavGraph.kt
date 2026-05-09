@@ -24,16 +24,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import uz.angrykitten.uybek.ui.localization.AppLanguage
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.screens.*
-import uz.angrykitten.uybek.ui.theme.Brand
+import uz.angrykitten.uybek.ui.theme.LocalDarkTheme
 import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
-
-// Bottom bar colors follow MaterialTheme so they work in both dark and light mode
-private val NavSelected = Brand
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavGraph(viewModel: AppViewModel = viewModel(), onToggleTheme: () -> Unit = {}) {
+fun AppNavGraph(
+    viewModel: AppViewModel = viewModel(),
+    onToggleTheme: () -> Unit = {},
+    currentLanguage: AppLanguage = AppLanguage.UZ,
+    onChangeLanguage: (AppLanguage) -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -75,7 +79,15 @@ fun AppNavGraph(viewModel: AppViewModel = viewModel(), onToggleTheme: () -> Unit
             composable(Screen.Search.route) { SearchScreen(viewModel, navController) }
             composable(Screen.PostListing.route) { PostListingScreen(viewModel, navController) }
             composable(Screen.Saved.route) { SavedScreen(viewModel, navController) }
-            composable(Screen.Profile.route) { ProfileScreen(viewModel, navController, onToggleTheme) }
+            composable(Screen.Profile.route) {
+                ProfileScreen(
+                    viewModel,
+                    navController,
+                    onToggleTheme,
+                    currentLanguage = currentLanguage,
+                    onChangeLanguage = onChangeLanguage
+                )
+            }
             composable(Screen.PropertyDetail.route) { backStackEntry ->
                 val propertyId = backStackEntry.arguments?.getString("propertyId") ?: return@composable
                 PropertyDetailScreen(propertyId, viewModel, navController)
@@ -84,7 +96,15 @@ fun AppNavGraph(viewModel: AppViewModel = viewModel(), onToggleTheme: () -> Unit
             composable(Screen.Login.route) { LoginScreen(viewModel, navController) }
             composable(Screen.Register.route) { RegisterScreen(viewModel, navController) }
             composable(Screen.MyListings.route) { MyListingsScreen(viewModel, navController) }
-            composable(Screen.Settings.route) { SettingsScreen(viewModel, navController, onToggleTheme) }
+            composable(Screen.Settings.route) {
+                SettingsScreen(
+                    viewModel,
+                    navController,
+                    onToggleTheme,
+                    currentLanguage = currentLanguage,
+                    onChangeLanguage = onChangeLanguage
+                )
+            }
             composable(Screen.Chat.route) { ChatScreen(viewModel, navController) }
             composable(Screen.ChatDetail.route) { backStackEntry ->
                 val chatId = backStackEntry.arguments?.getString("chatId")?.let(Uri::decode) ?: return@composable
@@ -108,11 +128,17 @@ fun MinimalistNavigationBar(
     navController: androidx.navigation.NavController,
     currentDestination: androidx.navigation.NavDestination?
 ) {
+    val navSelected = MaterialTheme.colorScheme.primary
+    val navBackground = if (LocalDarkTheme.current) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.96f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(elevation = 8.dp, spotColor = Color.Black.copy(alpha = 0.4f))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(navBackground)
     ) {
         Row(
             modifier = Modifier
@@ -147,7 +173,7 @@ fun MinimalistNavigationBar(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Brand),
+                                .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center
                         ) {
                             AnimatedContent(
@@ -172,21 +198,33 @@ fun MinimalistNavigationBar(
                             Icon(
                                 imageVector = if (sel) item.selectedIcon else item.unselectedIcon,
                                 contentDescription = item.label,
-                                tint = if (sel) NavSelected else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (sel) navSelected else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
                     }
                     Text(
-                        text = item.label,
+                        text = bottomNavLabel(item.screen),
                         fontSize = 10.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) NavSelected else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (selected) navSelected else MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         maxLines = 1
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun bottomNavLabel(screen: Screen): String {
+    return when (screen) {
+        Screen.Home -> tr("Asosiy", "Home", "Главная")
+        Screen.Chat -> tr("Chat", "Chats", "Чаты")
+        Screen.PostListing -> tr("E'lon", "Post", "Подать")
+        Screen.Saved -> tr("Saqlangan", "Saved", "Избранное")
+        Screen.Profile -> tr("Profil", "Profile", "Профиль")
+        else -> ""
     }
 }

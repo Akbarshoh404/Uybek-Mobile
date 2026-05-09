@@ -62,6 +62,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import uz.angrykitten.uybek.ui.localization.AppLanguage
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.AccentGold
 import uz.angrykitten.uybek.ui.theme.AccentRose
@@ -77,7 +79,9 @@ import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
 fun ProfileScreen(
     viewModel: AppViewModel,
     navController: NavController,
-    onToggleTheme: () -> Unit = {}
+    onToggleTheme: () -> Unit = {},
+    currentLanguage: AppLanguage = AppLanguage.UZ,
+    onChangeLanguage: (AppLanguage) -> Unit = {}
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle()
@@ -93,7 +97,7 @@ fun ProfileScreen(
             onDismissRequest = { showSignOutDialog = false },
             shape = RoundedCornerShape(24.dp),
             title = { Text("Akkauntdan chiqish", fontWeight = FontWeight.Bold) },
-            text = { Text("Haqiqatan ham akkauntdan chiqmoqchimisiz?") },
+            text = { Text(tr("Haqiqatan ham akkauntdan chiqmoqchimisiz?", "Do you want to sign out?", "Вы хотите выйти из аккаунта?")) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -103,7 +107,7 @@ fun ProfileScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BrandDark)
                 ) {
-                    Text("Chiqish", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(tr("Chiqish", "Sign out", "Выйти"), color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -111,7 +115,7 @@ fun ProfileScreen(
                     onClick = { showSignOutDialog = false },
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Bekor qilish")
+                    Text(tr("Bekor qilish", "Cancel", "Отмена"))
                 }
             }
         )
@@ -120,7 +124,7 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profil", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Profil", "Profile", "Профиль"), fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = onToggleTheme) {
                         Icon(
@@ -146,7 +150,7 @@ fun ProfileScreen(
             item {
                 if (isLoggedIn) {
                     LoggedInProfileHero(
-                        userName = userName ?: "Foydalanuvchi",
+                        userName = userName ?: tr("Foydalanuvchi", "User", "Пользователь"),
                         userEmail = userEmail.orEmpty(),
                         userAvatar = userAvatar,
                         listingCount = viewModel.getUserProperties().size,
@@ -161,63 +165,78 @@ fun ProfileScreen(
             }
 
             if (isLoggedIn) {
-                item { SectionLabel("Mening hisobim") }
+                item { SectionLabel(tr("Mening hisobim", "My account", "Мой аккаунт")) }
                 item {
                     ActionGroupCard {
                         ProfileActionRow(
                             icon = Icons.Default.List,
-                            title = "Mening e'lonlarim",
-                            subtitle = "Joylashtirilgan mulklarni boshqarish",
+                            title = tr("Mening e'lonlarim", "My listings", "Мои объявления"),
+                            subtitle = tr("Joylashtirilgan mulklarni boshqarish", "Manage your posted properties", "Управляйте своими объявлениями"),
                             onClick = { navController.navigate(Screen.MyListings.route) }
                         )
                         ProfileActionRow(
                             icon = Icons.Default.Favorite,
-                            title = "Saqlangan e'lonlar",
-                            subtitle = "Yoqtirgan mulklaringiz ro'yxati",
+                            title = tr("Saqlangan e'lonlar", "Saved listings", "Избранные объявления"),
+                            subtitle = tr("Yoqtirgan mulklaringiz ro'yxati", "Properties you liked", "Список понравившихся объектов"),
                             onClick = { navController.navigate(Screen.Saved.route) }
                         )
                     }
                 }
             }
 
-            item { SectionLabel("Ilova") }
+            item { SectionLabel(tr("Ilova", "App", "Приложение")) }
             item {
                 ActionGroupCard {
                     ProfileActionRow(
+                        icon = Icons.Default.Settings,
+                        title = tr("Til", "Language", "Язык"),
+                        subtitle = languageSummary(currentLanguage),
+                        badge = languageBadge(currentLanguage),
+                        onClick = {
+                            onChangeLanguage(
+                                when (currentLanguage) {
+                                    AppLanguage.UZ -> AppLanguage.EN
+                                    AppLanguage.EN -> AppLanguage.RU
+                                    AppLanguage.RU -> AppLanguage.UZ
+                                }
+                            )
+                        }
+                    )
+                    ProfileActionRow(
                         icon = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                        title = if (isDark) "Yorug' rejim" else "Qorong'u rejim",
-                        subtitle = "Ilova ko'rinishini almashtirish",
+                        title = if (isDark) tr("Yorug' rejim", "Light mode", "Светлая тема") else tr("Qorong'u rejim", "Dark mode", "Темная тема"),
+                        subtitle = tr("Ilova ko'rinishini almashtirish", "Change the app appearance", "Сменить оформление приложения"),
                         badge = if (isDark) "Dark" else "Light",
                         onClick = onToggleTheme
                     )
                     ProfileActionRow(
                         icon = Icons.Default.Settings,
-                        title = "Sozlamalar",
-                        subtitle = "Profil va ilova sozlamalari",
+                        title = tr("Sozlamalar", "Settings", "Настройки"),
+                        subtitle = tr("Profil va ilova sozlamalari", "Profile and app preferences", "Настройки профиля и приложения"),
                         onClick = { navController.navigate(Screen.Settings.route) }
                     )
                 }
             }
 
-            item { SectionLabel("Ma'lumot") }
+            item { SectionLabel(tr("Ma'lumot", "Info", "Информация")) }
             item {
                 ActionGroupCard {
                     ProfileActionRow(
                         icon = Icons.Default.Info,
-                        title = "Ilova haqida",
-                        subtitle = "Uybek, versiya 1.0",
+                        title = tr("Ilova haqida", "About app", "О приложении"),
+                        subtitle = tr("Uybek, versiya 1.0", "Uybek, version 1.0", "Uybek, версия 1.0"),
                         onClick = {}
                     )
                     ProfileActionRow(
                         icon = Icons.Default.Help,
-                        title = "Yordam markazi",
-                        subtitle = "Ko'p so'raladigan savollar",
+                        title = tr("Yordam markazi", "Help center", "Центр помощи"),
+                        subtitle = tr("Ko'p so'raladigan savollar", "Frequently asked questions", "Часто задаваемые вопросы"),
                         onClick = { navController.navigate(Screen.FAQ.route) }
                     )
                     ProfileActionRow(
                         icon = Icons.Outlined.Shield,
-                        title = "Maxfiylik siyosati",
-                        subtitle = "Ma'lumotlar xavfsizligi va qoidalar",
+                        title = tr("Maxfiylik siyosati", "Privacy policy", "Политика конфиденциальности"),
+                        subtitle = tr("Ma'lumotlar xavfsizligi va qoidalar", "Data safety and rules", "Безопасность данных и правила"),
                         onClick = { navController.navigate(Screen.PrivacyPolicy.route) }
                     )
                 }
@@ -236,7 +255,7 @@ fun ProfileScreen(
                         Icon(Icons.Default.Logout, contentDescription = null, tint = AccentRose)
                         Spacer(modifier = Modifier.size(10.dp))
                         Text(
-                            "Akkauntdan chiqish",
+                            tr("Akkauntdan chiqish", "Sign out", "Выйти из аккаунта"),
                             color = AccentRose,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -367,9 +386,9 @@ private fun GuestProfileHero(onLogin: () -> Unit, onRegister: () -> Unit) {
                     modifier = Modifier.size(36.dp)
                 )
             }
-            Text("Profilingizni yarating", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(tr("Profilingizni yarating", "Create your profile", "Создайте профиль"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                text = "Saqlanganlar, chat va e'lon boshqaruvi uchun akkauntga kiring.",
+                text = tr("Saqlanganlar, chat va e'lon boshqaruvi uchun akkauntga kiring.", "Sign in for saved listings, chat, and listing management.", "Войдите, чтобы пользоваться избранным, чатами и управлением объявлениями."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -380,14 +399,14 @@ private fun GuestProfileHero(onLogin: () -> Unit, onRegister: () -> Unit) {
                 shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Brand)
             ) {
-                Text("Kirish", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(tr("Kirish", "Sign in", "Войти"), color = Color.White, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(
                 onClick = onRegister,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp)
             ) {
-                Text("Ro'yxatdan o'tish", fontWeight = FontWeight.SemiBold)
+                Text(tr("Ro'yxatdan o'tish", "Register", "Регистрация"), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -491,6 +510,23 @@ private fun ProfileActionRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun languageSummary(language: AppLanguage): String {
+    return when (language) {
+        AppLanguage.UZ -> tr("O'zbek tili faol", "Uzbek active", "Узбекский активен")
+        AppLanguage.EN -> tr("Ingliz tili faol", "English active", "Английский активен")
+        AppLanguage.RU -> tr("Rus tili faol", "Russian active", "Русский активен")
+    }
+}
+
+private fun languageBadge(language: AppLanguage): String {
+    return when (language) {
+        AppLanguage.UZ -> "UZ"
+        AppLanguage.EN -> "EN"
+        AppLanguage.RU -> "RU"
     }
 }
 

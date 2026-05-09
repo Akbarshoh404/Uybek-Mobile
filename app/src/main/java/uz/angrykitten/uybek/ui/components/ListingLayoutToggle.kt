@@ -14,12 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import uz.angrykitten.uybek.ui.theme.Brand
 
 @Composable
 fun ListingLayoutToggle(
     columns: Int,
     onColumnsChange: (Int) -> Unit,
+    options: List<Int> = listOf(1, 2),
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -32,12 +32,12 @@ fun ListingLayoutToggle(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        listOf(1, 2, 3).forEach { option ->
+        options.forEach { option ->
             val selected = columns == option
             Box(
                 modifier = Modifier
                     .background(
-                        color = if (selected) Brand else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(14.dp)
                     )
                     .clickable { onColumnsChange(option) }

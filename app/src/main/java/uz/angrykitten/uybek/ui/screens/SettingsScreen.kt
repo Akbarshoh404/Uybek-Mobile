@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import uz.angrykitten.uybek.ui.localization.AppLanguage
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.Brand
 import uz.angrykitten.uybek.ui.theme.GradientEnd
@@ -37,7 +39,9 @@ import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
 fun SettingsScreen(
     viewModel: AppViewModel,
     navController: NavController,
-    onToggleTheme: () -> Unit = {}
+    onToggleTheme: () -> Unit = {},
+    currentLanguage: AppLanguage = AppLanguage.UZ,
+    onChangeLanguage: (AppLanguage) -> Unit = {}
 ) {
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val userName by viewModel.userName.collectAsStateWithLifecycle()
@@ -58,11 +62,11 @@ fun SettingsScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            shape = RoundedCornerShape(0.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
-                    "Akkauntni o'chirish",
+                    tr("Akkauntni o'chirish", "Delete account", "Удалить аккаунт"),
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFE53935)
                 )
@@ -70,12 +74,16 @@ fun SettingsScreen(
             text = {
                 Column {
                     Text(
-                        "Bu amalni qaytarib bo'lmaydi. Barcha ma'lumotlaringiz o'chiriladi.",
+                        tr(
+                            "Bu amalni qaytarib bo'lmaydi. Barcha ma'lumotlaringiz o'chiriladi.",
+                            "This action cannot be undone. All your data will be deleted.",
+                            "Это действие нельзя отменить. Все ваши данные будут удалены."
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Haqiqatan ham akkauntni o'chirmoqchimisiz?",
+                        tr("Haqiqatan ham akkauntni o'chirmoqchimisiz?", "Are you sure you want to delete your account?", "Вы уверены, что хотите удалить аккаунт?"),
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -90,14 +98,14 @@ fun SettingsScreen(
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935)),
-                    shape = RoundedCornerShape(0.dp)
-                ) { Text("O'chirish", fontWeight = FontWeight.Bold, color = Color.White) }
+                    shape = RoundedCornerShape(18.dp)
+                ) { Text(tr("O'chirish", "Delete", "Удалить"), fontWeight = FontWeight.Bold, color = Color.White) }
             },
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDeleteDialog = false },
-                    shape = RoundedCornerShape(0.dp)
-                ) { Text("Bekor qilish", color = MaterialTheme.colorScheme.onSurface) }
+                    shape = RoundedCornerShape(18.dp)
+                ) { Text(tr("Bekor qilish", "Cancel", "Отмена"), color = MaterialTheme.colorScheme.onSurface) }
             }
         )
     }
@@ -105,7 +113,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sozlamalar", fontWeight = FontWeight.Bold) },
+                title = { Text(tr("Sozlamalar", "Settings", "Настройки"), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
@@ -137,7 +145,7 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(RoundedCornerShape(0.dp))
+                                .clip(RoundedCornerShape(20.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
@@ -149,7 +157,7 @@ fun SettingsScreen(
                             )
                         }
                         Column {
-                            Text(userName ?: "Foydalanuvchi", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text(userName ?: tr("Foydalanuvchi", "User", "Пользователь"), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                             Text(userEmail ?: "", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -158,7 +166,7 @@ fun SettingsScreen(
                 Spacer(Modifier.height(8.dp))
 
                 // ── Profile info section ──────────────────────────────
-                SettingsSectionHeader("Profil ma'lumotlari")
+                SettingsSectionHeader(tr("Profil ma'lumotlari", "Profile details", "Данные профиля"))
 
                 // Name edit
                 SettingsItemCard {
@@ -171,8 +179,8 @@ fun SettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Default.Person, null, tint = Brand, modifier = Modifier.size(20.dp))
                                 Column {
-                                    Text("Ism Familiya", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(userName ?: "—", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(tr("Ism Familiya", "Full name", "Полное имя"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(userName ?: "-", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = { editingName = !editingName }) {
@@ -188,9 +196,9 @@ fun SettingsScreen(
                                 OutlinedTextField(
                                     value = nameInput,
                                     onValueChange = { nameInput = it },
-                                    label = { Text("Yangi ism") },
+                                    label = { Text(tr("Yangi ism", "New name", "Новое имя")) },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(0.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
                                     singleLine = true
                                 )
@@ -203,9 +211,9 @@ fun SettingsScreen(
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(0.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Brand)
-                                ) { Text("Saqlash", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.surface) }
+                                ) { Text(tr("Saqlash", "Save", "Сохранить"), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.surface) }
                             }
                         }
                     }
@@ -224,8 +232,8 @@ fun SettingsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 Icon(Icons.Default.Phone, null, tint = Brand, modifier = Modifier.size(20.dp))
                                 Column {
-                                    Text("Telefon raqam", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text(userPhone ?: "Kiritilmagan", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(tr("Telefon raqam", "Phone number", "Номер телефона"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(userPhone ?: tr("Kiritilmagan", "Not set", "Не указан"), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 }
                             }
                             IconButton(onClick = { editingPhone = !editingPhone }) {
@@ -241,15 +249,15 @@ fun SettingsScreen(
                                 OutlinedTextField(
                                     value = phoneInput,
                                     onValueChange = { phoneInput = it.filter { c -> c.isDigit() }.take(9) },
-                                    label = { Text("Telefon raqam") },
+                                    label = { Text(tr("Telefon raqam", "Phone number", "Номер телефона")) },
                                     prefix = {
-                                        Surface(shape = RoundedCornerShape(0.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+                                        Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                                             Text("+998", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                                         }
                                     },
                                     placeholder = { Text("XX XXX XX XX") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(0.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Brand),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true
@@ -263,9 +271,9 @@ fun SettingsScreen(
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(0.dp),
+                                    shape = RoundedCornerShape(20.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Brand)
-                                ) { Text("Saqlash", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.surface) }
+                                ) { Text(tr("Saqlash", "Save", "Сохранить"), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.surface) }
                             }
                         }
                     }
@@ -275,7 +283,7 @@ fun SettingsScreen(
             }
 
             // ── Appearance section ────────────────────────────────────
-            SettingsSectionHeader("Ko'rinish")
+            SettingsSectionHeader(tr("Ko'rinish", "Appearance", "Внешний вид"))
 
             SettingsItemCard {
                 Row(
@@ -289,7 +297,7 @@ fun SettingsScreen(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(RoundedCornerShape(0.dp))
+                                .clip(RoundedCornerShape(18.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
@@ -299,9 +307,9 @@ fun SettingsScreen(
                             )
                         }
                         Column {
-                            Text("Mavzu rejimi", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(tr("Mavzu rejimi", "Theme mode", "Режим темы"), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                             Text(
-                                if (isDark) "Qoʻng'ir (Dark)" else "Yorug' (Light)",
+                                if (isDark) tr("Qorong'u", "Dark", "Темная") else tr("Yorug'", "Light", "Светлая"),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -310,7 +318,16 @@ fun SettingsScreen(
                     Switch(
                         checked = isDark,
                         onCheckedChange = { onToggleTheme() },
-                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Brand)
+                        colors = SwitchDefaults.colors(
+                            // Dark mode ON
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Brand,
+                            checkedBorderColor = Brand,
+                            // Dark mode OFF (light theme)
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurface,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outline
+                        )
                     )
                 }
             }
@@ -318,13 +335,54 @@ fun SettingsScreen(
             Spacer(Modifier.height(8.dp))
 
             // ── Info section ─────────────────────────────────────────
-            SettingsSectionHeader("Ilova")
+            SettingsItemCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Settings, null, tint = Brand, modifier = Modifier.size(22.dp))
+                        }
+                        Column {
+                            Text(tr("Ilova tili", "App language", "Язык приложения"), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(currentLanguageLabel(currentLanguage), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(AppLanguage.UZ, AppLanguage.EN, AppLanguage.RU).forEach { language ->
+                            FilterChip(
+                                selected = currentLanguage == language,
+                                onClick = { onChangeLanguage(language) },
+                                label = { Text(languageChip(language)) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Brand,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            SettingsSectionHeader(tr("Ilova", "App", "Приложение"))
 
             SettingsItemCard {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SettingsInfoRow(Icons.Default.Info, "Versiya", "1.0.0")
+                    SettingsInfoRow(Icons.Default.Info, tr("Versiya", "Version", "Версия"), "1.0.0")
                     HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
-                    SettingsInfoRow(Icons.Default.Code, "Paket", "uz.angrykitten.uybek")
+                    SettingsInfoRow(Icons.Default.Code, tr("Paket", "Package", "Пакет"), "uz.angrykitten.uybek")
                 }
             }
 
@@ -332,13 +390,13 @@ fun SettingsScreen(
 
             // ── Danger zone ─────────────────────────────────────────
             if (isLoggedIn) {
-                SettingsSectionHeader("Xavfli zona")
+                SettingsSectionHeader(tr("Xavfli zona", "Danger zone", "Опасная зона"))
 
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(26.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE53935).copy(alpha = 0.5f)),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
@@ -346,9 +404,9 @@ fun SettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Icon(Icons.Default.DeleteForever, null, tint = Color(0xFFE53935), modifier = Modifier.size(22.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Akkauntni o'chirish", fontWeight = FontWeight.Bold, color = Color(0xFFE53935))
+                                Text(tr("Akkauntni o'chirish", "Delete account", "Удалить аккаунт"), fontWeight = FontWeight.Bold, color = Color(0xFFE53935))
                                 Text(
-                                    "Barcha ma'lumotlar butunlay o'chiriladi",
+                                    tr("Barcha ma'lumotlar butunlay o'chiriladi", "All account data will be permanently removed", "Все данные аккаунта будут удалены безвозвратно"),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -358,13 +416,13 @@ fun SettingsScreen(
                         OutlinedButton(
                             onClick = { showDeleteDialog = true },
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(0.dp),
+                            shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE53935)),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE53935))
                         ) {
                             Icon(Icons.Default.Warning, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Akkauntni o'chirish", fontWeight = FontWeight.SemiBold)
+                            Text(tr("Akkauntni o'chirish", "Delete account", "Удалить аккаунт"), fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -395,7 +453,7 @@ private fun SettingsItemCard(content: @Composable () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(0.dp),
+        shape = RoundedCornerShape(26.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -418,5 +476,22 @@ private fun SettingsInfoRow(
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
         Text(value, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun currentLanguageLabel(language: AppLanguage): String {
+    return when (language) {
+        AppLanguage.UZ -> tr("O'zbek tili", "Uzbek", "Узбекский")
+        AppLanguage.EN -> tr("Ingliz tili", "English", "Английский")
+        AppLanguage.RU -> tr("Rus tili", "Russian", "Русский")
+    }
+}
+
+private fun languageChip(language: AppLanguage): String {
+    return when (language) {
+        AppLanguage.UZ -> "UZ"
+        AppLanguage.EN -> "EN"
+        AppLanguage.RU -> "RU"
     }
 }

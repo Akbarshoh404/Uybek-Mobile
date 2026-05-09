@@ -427,6 +427,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val uid = userId.value ?: return emptyList()
         return propertyRepo.getUserProperties(uid)
     }
+
+    suspend fun uploadImage(uri: android.net.Uri): Result<String> {
+        return propertyRepo.uploadImage(uri)
+    }
+
     fun getAllProperties(): List<Property> = propertyRepo.getProperties()
     fun getPropertyById(id: String): Property? = propertyRepo.getPropertyById(id)
     fun getCities() = propertyRepo.getCities()

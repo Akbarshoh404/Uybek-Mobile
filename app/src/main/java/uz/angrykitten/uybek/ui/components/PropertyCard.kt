@@ -43,6 +43,7 @@ import uz.angrykitten.uybek.data.model.Property
 import uz.angrykitten.uybek.ui.theme.AccentRent
 import uz.angrykitten.uybek.ui.theme.AccentSale
 import uz.angrykitten.uybek.ui.theme.Brand
+import uz.angrykitten.uybek.ui.theme.LocalDarkTheme
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -74,6 +75,11 @@ fun DealTypeBadge(dealType: String, modifier: Modifier = Modifier, compact: Bool
             fontWeight = FontWeight.Bold
         )
     }
+}
+
+@Composable
+private fun priceTint(): Color {
+    return if (LocalDarkTheme.current) MaterialTheme.colorScheme.primary else Brand
 }
 
 @Composable
@@ -145,7 +151,7 @@ fun PropertyCard(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Black,
-                        color = Brand
+                        color = priceTint()
                     )
                 }
             }
@@ -248,7 +254,7 @@ fun PropertyGridCard(
                 text = formatPrice(property.price, property.currency, property.price_period),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Black,
-                color = Brand,
+                color = priceTint(),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -352,7 +358,7 @@ fun PropertyListCard(
                     text = formatPrice(property.price, property.currency, property.price_period),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
-                    color = Brand
+                    color = priceTint()
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(

@@ -17,8 +17,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import uz.angrykitten.uybek.data.model.Property
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.Brand
@@ -67,6 +71,10 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
     var phone by remember { mutableStateOf("") }
     var telegram by remember { mutableStateOf("") }
     var stepError by remember { mutableStateOf<String?>(null) }
+    
+    val uploadedImages = remember { mutableStateListOf<String>() }
+    var isUploading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     val userName by viewModel.userName.collectAsStateWithLifecycle()
     val userPhone by viewModel.userPhone.collectAsStateWithLifecycle()
@@ -147,10 +155,24 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
             when (currentStep) {
                 0 -> StepDealAndType(dealType, propertyType, onDealType = { dealType = it }, onPropertyType = { propertyType = it })
                 1 -> StepDetails(title, description, bedrooms, bathrooms, area, floor, totalFloors, yearBuilt, isNewBuild,
+                    uploadedImages, isUploading,
                     onTitle = { title = it }, onDescription = { description = it },
                     onBedrooms = { bedrooms = it }, onBathrooms = { bathrooms = it },
                     onArea = { area = it }, onFloor = { floor = it }, onTotalFloors = { totalFloors = it },
-                    onYearBuilt = { yearBuilt = it }, onIsNewBuild = { isNewBuild = it })
+                    onYearBuilt = { yearBuilt = it }, onIsNewBuild = { isNewBuild = it },
+                    onImagePicked = { uri ->
+                        scope.launch {
+                            isUploading = true
+                            viewModel.uploadImage(uri).onSuccess { url ->
+                                uploadedImages.add(url)
+                            }.onFailure {
+                                stepError = "Rasm yuklashda xatolik: ${it.message}"
+                            }
+                            isUploading = false
+                        }
+                    },
+                    onRemoveImage = { url -> uploadedImages.remove(url) }
+                )
                 2 -> StepLocation(cities, selectedCityId, selectedCityName, selectedDistrictId, selectedDistrictName, address,
                     viewModel = viewModel,
                     onCitySelected = { id, name -> selectedCityId = id; selectedCityName = name; selectedDistrictId = null; selectedDistrictName = "" },
@@ -165,7 +187,7 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
             stepError?.let { err ->
                 Spacer(Modifier.height(8.dp))
                 Card(
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -189,7 +211,7 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                     OutlinedButton(
                         onClick = { currentStep-- },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(0.dp),
+                        shape = RoundedCornerShape(20.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Icon(Icons.Default.ArrowBack, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
@@ -231,7 +253,7 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                                 is_new_build = isNewBuild,
                                 is_active = true,
                                 views_count = 0,
-                                images = listOf("https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800"),
+                                images = if (uploadedImages.isEmpty()) listOf("https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800") else uploadedImages.toList(),
                                 seller_name = userName ?: "Foydalanuvchi",
                                 seller_phone = if (phone.isNotBlank()) "+998$phone" else "",
                                 seller_whatsapp = if (telegram.isNotBlank()) telegram else "",
@@ -244,7 +266,7 @@ fun PostListingScreen(viewModel: AppViewModel, navController: NavController) {
                         }
                     },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Text(
@@ -327,7 +349,7 @@ fun DealTypeCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(0.dp),
+        shape = RoundedCornerShape(24.dp),
         border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.onSurface) 
                  else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors = CardDefaults.cardColors(
@@ -350,13 +372,73 @@ fun DealTypeCard(
 fun StepDetails(
     title: String, description: String, bedrooms: String, bathrooms: String,
     area: String, floor: String, totalFloors: String, yearBuilt: String, isNewBuild: Boolean,
+    uploadedImages: List<String>, isUploading: Boolean,
     onTitle: (String) -> Unit, onDescription: (String) -> Unit,
     onBedrooms: (String) -> Unit, onBathrooms: (String) -> Unit,
     onArea: (String) -> Unit, onFloor: (String) -> Unit, onTotalFloors: (String) -> Unit,
-    onYearBuilt: (String) -> Unit, onIsNewBuild: (Boolean) -> Unit
+    onYearBuilt: (String) -> Unit, onIsNewBuild: (Boolean) -> Unit,
+    onImagePicked: (android.net.Uri) -> Unit,
+    onRemoveImage: (String) -> Unit
 ) {
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { onImagePicked(it) }
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("Mulk tafsilotlari", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        
+        // Image Upload Section
+        Text("Rasmlar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        androidx.compose.foundation.lazy.LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(uploadedImages.size) { index ->
+                val url = uploadedImages[index]
+                Box(modifier = Modifier.size(100.dp)) {
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Uploaded Image",
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                    IconButton(
+                        onClick = { onRemoveImage(url) },
+                        modifier = Modifier.align(Alignment.TopEnd).size(24.dp).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(Icons.Default.Close, "O'chirish", tint = Color.White, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+            item {
+                if (isUploading) {
+                    Box(modifier = Modifier.size(100.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Brand)
+                    }
+                } else if (uploadedImages.size < 10) {
+                    Card(
+                        modifier = Modifier.size(100.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        onClick = {
+                            photoPickerLauncher.launch(
+                                androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                            Icon(Icons.Default.AddPhotoAlternate, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(4.dp))
+                            Text("Qo'shish", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+        
         PostFormField("E'lon sarlavhasi", title, onTitle)
         PostFormField("Tavsif", description, onDescription, singleLine = false, minLines = 3)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -407,7 +489,7 @@ fun StepLocation(
                 leadingIcon = { Icon(Icons.Default.LocationCity, null, tint = Brand) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cityExpanded) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
-                shape = RoundedCornerShape(0.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface)
             )
             ExposedDropdownMenu(expanded = cityExpanded, onDismissRequest = { cityExpanded = false }) {
@@ -430,7 +512,7 @@ fun StepLocation(
                 leadingIcon = { Icon(Icons.Default.Map, null, tint = Brand) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(districtExpanded) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
-                shape = RoundedCornerShape(0.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
                 enabled = selectedCityId != null
             )
@@ -463,7 +545,7 @@ fun StepPriceContact(
                     selected = currency == c,
                     onClick = { onCurrency(c) },
                     label = { Text("$c ($label)") },
-                    shape = RoundedCornerShape(0.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.onSurface, selectedLabelColor = MaterialTheme.colorScheme.surface)
                 )
             }
@@ -476,7 +558,7 @@ fun StepPriceContact(
                         selected = pricePeriod == p,
                         onClick = { onPricePeriod(p) },
                         label = { Text(label) },
-                        shape = RoundedCornerShape(0.dp),
+                        shape = RoundedCornerShape(18.dp),
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.onSurface, selectedLabelColor = MaterialTheme.colorScheme.surface)
                     )
                 }
@@ -505,12 +587,12 @@ fun PhoneFieldUz(
         },
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         prefix = {
             Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
@@ -570,7 +652,7 @@ fun StepReview(
 
         // Summary card
         Card(
-            shape = RoundedCornerShape(0.dp),
+            shape = RoundedCornerShape(24.dp),
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -598,7 +680,7 @@ fun StepReview(
 
         // Info banner
         Card(
-            shape = RoundedCornerShape(0.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ),
@@ -612,7 +694,7 @@ fun StepReview(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(0.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.onSurface),
                     contentAlignment = Alignment.Center
                 ) {
@@ -685,7 +767,7 @@ fun PostFormField(
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = modifier,
-        shape = RoundedCornerShape(0.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.onSurface),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = singleLine,

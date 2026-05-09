@@ -56,7 +56,7 @@ fun SplashScreen(viewModel: AppViewModel, navController: NavController) {
                 Modifier
                     .scale(scale)
                     .size(96.dp)
-                    .clip(RoundedCornerShape(0.dp))
+                    .clip(RoundedCornerShape(28.dp))
                     .background(Brand),
                 contentAlignment = Alignment.Center
             ) {

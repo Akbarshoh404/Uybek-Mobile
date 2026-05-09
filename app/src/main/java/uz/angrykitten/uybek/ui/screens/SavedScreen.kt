@@ -48,6 +48,7 @@ import androidx.navigation.NavController
 import uz.angrykitten.uybek.ui.components.ListingLayoutToggle
 import uz.angrykitten.uybek.ui.components.PropertyCard
 import uz.angrykitten.uybek.ui.components.PropertyGridCard
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.AccentRose
 import uz.angrykitten.uybek.ui.theme.Brand
@@ -60,6 +61,7 @@ fun SavedScreen(viewModel: AppViewModel, navController: NavController) {
     val savedIds by viewModel.savedIds.collectAsStateWithLifecycle()
     val savedProperties by viewModel.savedProperties.collectAsStateWithLifecycle()
     var columns by rememberSaveable { mutableIntStateOf(2) }
+    val layoutColumns = if (columns == 1) 1 else 2
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -76,7 +78,7 @@ fun SavedScreen(viewModel: AppViewModel, navController: NavController) {
         }
 
         LazyVerticalGrid(
-            columns = GridCells.Fixed(columns),
+            columns = GridCells.Fixed(layoutColumns),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
@@ -87,7 +89,7 @@ fun SavedScreen(viewModel: AppViewModel, navController: NavController) {
             fullWidthItem {
                 SavedHeader(
                     count = savedProperties.size,
-                    columns = columns,
+                    columns = layoutColumns,
                     onColumnsChange = { columns = it }
                 )
             }
@@ -98,7 +100,7 @@ fun SavedScreen(viewModel: AppViewModel, navController: NavController) {
                 }
             } else {
                 items(savedProperties, key = { it.id }) { property ->
-                    if (columns == 1) {
+                    if (layoutColumns == 1) {
                         PropertyCard(
                             property = property,
                             isSaved = property.id in savedIds,
@@ -139,12 +141,12 @@ private fun SavedHeader(count: Int, columns: Int, onColumnsChange: (Int) -> Unit
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Saqlangan e'lonlar",
+                        text = tr("Saqlangan e'lonlar", "Saved listings", "Избранные объявления"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Yoqtirgan mulklaringiz bir joyda jamlandi.",
+                        text = tr("Yoqtirgan mulklaringiz bir joyda jamlandi.", "All your liked properties are here.", "Все понравившиеся объекты собраны здесь."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -154,7 +156,7 @@ private fun SavedHeader(count: Int, columns: Int, onColumnsChange: (Int) -> Unit
                     color = BrandLight
                 ) {
                     Text(
-                        text = "$count ta",
+                        text = tr("$count ta", "$count", "$count"),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         color = Brand,
                         fontWeight = FontWeight.Bold
@@ -168,7 +170,7 @@ private fun SavedHeader(count: Int, columns: Int, onColumnsChange: (Int) -> Unit
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Ko'rinish",
+                    text = tr("Ko'rinish", "View", "Вид"),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -219,9 +221,9 @@ private fun SavedGuestState(
                     )
                 }
 
-                Text("Saqlangan mulklar", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(tr("Saqlangan mulklar", "Saved properties", "Избранная недвижимость"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Sevimli e'lonlarni yig'ish uchun akkauntingizga kiring.",
+                    text = tr("Sevimli e'lonlarni yig'ish uchun akkauntingizga kiring.", "Sign in to collect favorite listings.", "Войдите, чтобы сохранять понравившиеся объявления."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -235,7 +237,7 @@ private fun SavedGuestState(
                 ) {
                     androidx.compose.material3.Icon(Icons.Default.Login, contentDescription = null)
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Kirish", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(tr("Kirish", "Sign in", "Войти"), fontWeight = FontWeight.Bold, color = Color.White)
                 }
 
                 OutlinedButton(
@@ -243,7 +245,7 @@ private fun SavedGuestState(
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
                 ) {
-                    Text("Ro'yxatdan o'tish", fontWeight = FontWeight.SemiBold)
+                    Text(tr("Ro'yxatdan o'tish", "Register", "Регистрация"), fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -278,9 +280,9 @@ private fun EmptySavedState(onBrowse: () -> Unit) {
                     modifier = Modifier.size(34.dp)
                 )
             }
-            Text("Hali hech narsa saqlanmadi", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(tr("Hali hech narsa saqlanmadi", "Nothing saved yet", "Пока ничего не сохранено"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                text = "Uy yoki kvartira kartasidagi yurak tugmasini bosib saqlashni boshlang.",
+                text = tr("Uy yoki kvartira kartasidagi yurak tugmasini bosib saqlashni boshlang.", "Tap the heart on a property card to start saving listings.", "Нажмите на сердечко в карточке, чтобы начать сохранять объявления."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -290,7 +292,7 @@ private fun EmptySavedState(onBrowse: () -> Unit) {
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Brand)
             ) {
-                Text("E'lonlarni ko'rish", color = Color.White, fontWeight = FontWeight.Bold)
+                Text(tr("E'lonlarni ko'rish", "Browse listings", "Смотреть объявления"), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }

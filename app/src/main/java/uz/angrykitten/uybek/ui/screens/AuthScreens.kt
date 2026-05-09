@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 import uz.angrykitten.uybek.BuildConfig
+import uz.angrykitten.uybek.ui.localization.tr
 import uz.angrykitten.uybek.ui.navigation.Screen
 import uz.angrykitten.uybek.ui.theme.*
 import uz.angrykitten.uybek.ui.viewmodel.AppViewModel
@@ -43,6 +45,9 @@ private val AuthSurface @Composable get() = MaterialTheme.colorScheme.surface
 private val AuthBorder @Composable get() = MaterialTheme.colorScheme.outline
 private val AuthText @Composable get() = MaterialTheme.colorScheme.onBackground
 private val AuthSubtext @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val AuthCardShape = RoundedCornerShape(28.dp)
+private val AuthFieldShape = RoundedCornerShape(22.dp)
+private val AuthChipShape = RoundedCornerShape(20.dp)
 
 // ════════════════════════════════════════════════════════════════════════════
 // LOGIN SCREEN
@@ -59,6 +64,8 @@ fun LoginScreen(viewModel: AppViewModel, navController: NavController) {
     val activity = LocalActivity.current as Activity
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val resetSentText = tr("Tiklash xati yuborildi", "Reset email sent", "Письмо для сброса отправлено")
+    val emailNotFoundText = tr("Email topilmadi", "Email not found", "Email не найден")
 
     LaunchedEffect(authState.error) {
         authState.error?.let { snackbarHostState.showSnackbar(it); viewModel.clearAuthError() }
@@ -80,40 +87,49 @@ fun LoginScreen(viewModel: AppViewModel, navController: NavController) {
 
             // Logo
             Box(
-                Modifier.size(56.dp).background(Brand),
+                Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Brand),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(28.dp))
             }
             Spacer(Modifier.height(24.dp))
 
-            Text("Xush kelibsiz!", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = AuthText)
+            Text(tr("Xush kelibsiz!", "Welcome!", "Добро пожаловать!"), fontWeight = FontWeight.Bold, fontSize = 28.sp, color = AuthText)
             Spacer(Modifier.height(4.dp))
-            Text("Email yoki telefon bilan kiring", color = AuthSubtext, fontSize = 15.sp)
+            Text(tr("Email yoki telefon bilan kiring", "Sign in with email or phone", "Войдите по email или телефону"), color = AuthSubtext, fontSize = 15.sp)
             Spacer(Modifier.height(32.dp))
 
-            AuthTabRow(selected = activeTab, onSelect = { activeTab = it; viewModel.resetPhoneStep() })
-            Spacer(Modifier.height(24.dp))
+            Card(
+                shape = AuthCardShape,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    AuthTabRow(selected = activeTab, onSelect = { activeTab = it; viewModel.resetPhoneStep() })
+                    Spacer(Modifier.height(24.dp))
 
-            AnimatedContent(targetState = activeTab, label = "tab") { tab ->
+                    AnimatedContent(targetState = activeTab, label = "tab") { tab ->
                 when (tab) {
                     AuthTab.EMAIL -> Column {
-                        DarkAuthField(value = email, onChange = { email = it }, label = "Email",
+                        DarkAuthField(value = email, onChange = { email = it }, label = tr("Email", "Email", "Email"),
                             icon = Icons.Default.Email, keyboardType = KeyboardType.Email)
                         Spacer(Modifier.height(16.dp))
-                        DarkAuthField(value = password, onChange = { password = it }, label = "Parol",
+                        DarkAuthField(value = password, onChange = { password = it }, label = tr("Parol", "Password", "Пароль"),
                             icon = Icons.Default.Lock, keyboardType = KeyboardType.Password,
                             isPassword = true, passwordVisible = passwordVisible,
                             onToggle = { passwordVisible = !passwordVisible })
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = {
                                 if (email.isNotBlank()) viewModel.sendPasswordReset(email) {
-                                    scope.launch { snackbarHostState.showSnackbar(if (it) "Tiklash xati yuborildi ✓" else "Email topilmadi") }
+                                    scope.launch { snackbarHostState.showSnackbar(if (it) resetSentText else emailNotFoundText) }
                                 }
-                            }) { Text("Parolni unutdingizmi?", color = Brand, fontSize = 13.sp) }
+                            }) { Text(tr("Parolni unutdingizmi?", "Forgot password?", "Забыли пароль?"), color = Brand, fontSize = 13.sp) }
                         }
                         Spacer(Modifier.height(8.dp))
-                        PrimaryButton(text = "Kirish", isLoading = authState.isLoading,
+                        PrimaryButton(text = tr("Kirish", "Sign in", "Войти"), isLoading = authState.isLoading,
                             enabled = email.isNotBlank() && password.isNotBlank()) {
                             viewModel.loginWithEmail(email, password,
                                 onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } } },
@@ -124,6 +140,8 @@ fun LoginScreen(viewModel: AppViewModel, navController: NavController) {
                         viewModel = viewModel, activity = activity,
                         onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } } }
                     )
+                }
+                    }
                 }
             }
 
@@ -149,17 +167,17 @@ fun LoginScreen(viewModel: AppViewModel, navController: NavController) {
                 onClick = { navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } } },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Mehmon sifatida davom etish", color = AuthSubtext, fontSize = 14.sp)
+                Text(tr("Mehmon sifatida davom etish", "Continue as guest", "Продолжить как гость"), color = AuthSubtext, fontSize = 14.sp)
                 Spacer(Modifier.width(4.dp))
-                Icon(Icons.Default.ArrowForward, null, tint = AuthSubtext, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = AuthSubtext, modifier = Modifier.size(16.dp))
             }
 
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically) {
-                Text("Akkaunt yo'qmi? ", color = AuthSubtext, fontSize = 14.sp)
+                Text(tr("Akkaunt yo'qmi? ", "No account yet? ", "Нет аккаунта? "), color = AuthSubtext, fontSize = 14.sp)
                 TextButton(onClick = { navController.navigate(Screen.Register.route) }) {
-                    Text("Ro'yxatdan o'ting", color = Brand, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(tr("Ro'yxatdan o'ting", "Register", "Регистрация"), color = Brand, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -198,37 +216,45 @@ fun RegisterScreen(viewModel: AppViewModel, navController: NavController) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = AuthText)
             }
             Spacer(Modifier.height(16.dp))
-            Text("Hisob yaratish", fontWeight = FontWeight.Bold, fontSize = 28.sp, color = AuthText)
+            Text(tr("Hisob yaratish", "Create account", "Создать аккаунт"), fontWeight = FontWeight.Bold, fontSize = 28.sp, color = AuthText)
             Spacer(Modifier.height(4.dp))
-            Text("Barcha imkoniyatlardan foydalaning", color = AuthSubtext, fontSize = 15.sp)
+            Text(tr("Barcha imkoniyatlardan foydalaning", "Unlock the full experience", "Откройте все возможности"), color = AuthSubtext, fontSize = 15.sp)
             Spacer(Modifier.height(32.dp))
 
-            DarkAuthField(value = name, onChange = { name = it }, label = "Ism Familiya", icon = Icons.Default.Person)
-            Spacer(Modifier.height(16.dp))
-            DarkAuthField(value = email, onChange = { email = it }, label = "Email",
-                icon = Icons.Default.Email, keyboardType = KeyboardType.Email)
-            Spacer(Modifier.height(16.dp))
-            DarkAuthField(value = password, onChange = { password = it }, label = "Parol",
-                icon = Icons.Default.Lock, keyboardType = KeyboardType.Password,
-                isPassword = true, passwordVisible = passwordVisible,
-                onToggle = { passwordVisible = !passwordVisible })
-            Spacer(Modifier.height(16.dp))
+            Card(
+                shape = AuthCardShape,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    DarkAuthField(value = name, onChange = { name = it }, label = tr("Ism Familiya", "Full name", "Полное имя"), icon = Icons.Default.Person)
+                    Spacer(Modifier.height(16.dp))
+                    DarkAuthField(value = email, onChange = { email = it }, label = tr("Email", "Email", "Email"),
+                        icon = Icons.Default.Email, keyboardType = KeyboardType.Email)
+                    Spacer(Modifier.height(16.dp))
+                    DarkAuthField(value = password, onChange = { password = it }, label = tr("Parol", "Password", "Пароль"),
+                        icon = Icons.Default.Lock, keyboardType = KeyboardType.Password,
+                        isPassword = true, passwordVisible = passwordVisible,
+                        onToggle = { passwordVisible = !passwordVisible })
+                    Spacer(Modifier.height(16.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = agreed, onCheckedChange = { agreed = it },
-                    colors = CheckboxDefaults.colors(checkedColor = Brand, uncheckedColor = AuthBorder))
-                Text("Foydalanish ", color = AuthText, fontSize = 13.sp)
-                Text("shartlari", color = Brand, fontSize = 13.sp, modifier = Modifier.clickable {})
-                Text(" va ", color = AuthText, fontSize = 13.sp)
-                Text("maxfiylik", color = Brand, fontSize = 13.sp, modifier = Modifier.clickable {})
-            }
-            Spacer(Modifier.height(24.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = agreed, onCheckedChange = { agreed = it },
+                            colors = CheckboxDefaults.colors(checkedColor = Brand, uncheckedColor = AuthBorder))
+                        Text(tr("Foydalanish ", "I agree to the ", "Я принимаю "), color = AuthText, fontSize = 13.sp)
+                        Text(tr("shartlari", "terms", "условия"), color = Brand, fontSize = 13.sp, modifier = Modifier.clickable {})
+                        Text(tr(" va ", " and ", " и "), color = AuthText, fontSize = 13.sp)
+                        Text(tr("maxfiylik", "privacy policy", "политику конфиденциальности"), color = Brand, fontSize = 13.sp, modifier = Modifier.clickable {})
+                    }
+                    Spacer(Modifier.height(24.dp))
 
-            PrimaryButton(text = "Ro'yxatdan o'tish", isLoading = authState.isLoading,
-                enabled = email.isNotBlank() && password.length >= 6 && agreed) {
-                viewModel.registerWithEmail(name, email, password,
-                    onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } } },
-                    onError = {})
+                    PrimaryButton(text = tr("Ro'yxatdan o'tish", "Register", "Регистрация"), isLoading = authState.isLoading,
+                        enabled = email.isNotBlank() && password.length >= 6 && agreed) {
+                        viewModel.registerWithEmail(name, email, password,
+                            onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } } },
+                            onError = {})
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -246,9 +272,9 @@ fun RegisterScreen(viewModel: AppViewModel, navController: NavController) {
             Spacer(Modifier.height(28.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically) {
-                Text("Akkauntingiz bormi? ", color = AuthSubtext, fontSize = 14.sp)
+                Text(tr("Akkauntingiz bormi? ", "Already have an account? ", "Уже есть аккаунт? "), color = AuthSubtext, fontSize = 14.sp)
                 TextButton(onClick = { navController.popBackStack() }) {
-                    Text("Kirish", color = Brand, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(tr("Kirish", "Sign in", "Войти"), color = Brand, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -269,7 +295,11 @@ fun GuestPromptScreen(title: String, message: String, navController: NavControll
         Column(Modifier.fillMaxSize().padding(40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
-            Box(Modifier.size(80.dp).background(Brand.copy(alpha = 0.05f)),
+            Box(
+                Modifier
+                    .size(80.dp)
+                    .clip(AuthCardShape)
+                    .background(Brand.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.Lock, null, modifier = Modifier.size(36.dp), tint = Brand)
             }
@@ -278,13 +308,13 @@ fun GuestPromptScreen(title: String, message: String, navController: NavControll
             Spacer(Modifier.height(8.dp))
             Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, fontSize = 14.sp)
             Spacer(Modifier.height(32.dp))
-            PrimaryButton("Kirish", isLoading = false, enabled = true) { navController.navigate(Screen.Login.route) }
+            PrimaryButton(tr("Kirish", "Sign in", "Войти"), isLoading = false, enabled = true) { navController.navigate(Screen.Login.route) }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(onClick = { navController.navigate(Screen.Register.route) },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(0.dp),
+                shape = AuthFieldShape,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
-                Text("Ro'yxatdan o'tish", fontWeight = FontWeight.SemiBold, color = AuthText)
+                Text(tr("Ro'yxatdan o'tish", "Register", "Регистрация"), fontWeight = FontWeight.SemiBold, color = AuthText)
             }
         }
     }
@@ -299,7 +329,7 @@ enum class AuthTab { EMAIL, PHONE }
 @Composable
 private fun AuthTabRow(selected: AuthTab, onSelect: (AuthTab) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(0.dp))
+        Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline, AuthCardShape)
             .background(MaterialTheme.colorScheme.surface).padding(2.dp),
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
@@ -307,12 +337,13 @@ private fun AuthTabRow(selected: AuthTab, onSelect: (AuthTab) -> Unit) {
             val sel = tab == selected
             Box(
                 Modifier.weight(1f)
+                    .clip(AuthChipShape)
                     .background(if (sel) Brand else Color.Transparent)
                     .clickable { onSelect(tab) }.padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    if (tab == AuthTab.EMAIL) "Email" else "Telefon",
+                    if (tab == AuthTab.EMAIL) tr("Email", "Email", "Email") else tr("Telefon", "Phone", "Телефон"),
                     color = if (sel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
                     fontSize = 14.sp
@@ -353,7 +384,7 @@ fun DarkAuthField(
         }) else null,
         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
+        shape = AuthFieldShape,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Brand,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -369,7 +400,7 @@ fun PrimaryButton(text: String, isLoading: Boolean, enabled: Boolean, onClick: (
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(52.dp),
-        shape = RoundedCornerShape(0.dp),
+        shape = AuthFieldShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = Brand,
             disabledContainerColor = Brand.copy(alpha = 0.3f)
@@ -399,8 +430,9 @@ private fun SocialCircleButton(
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier.size(56.dp)
+                .clip(AuthFieldShape)
                 .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(0.dp))
+                .border(1.dp, MaterialTheme.colorScheme.outline, AuthFieldShape)
                 .clickable(enabled = !isLoading) { onClick() },
             contentAlignment = Alignment.Center
         ) { icon() }
@@ -421,19 +453,19 @@ private fun PhoneSection(viewModel: AppViewModel, activity: Activity, onSuccess:
     AnimatedContent(targetState = authState.phoneStep, label = "phoneStep") { step ->
         when (step) {
             PhoneStep.ENTER_NUMBER -> Column {
-                DarkAuthField(value = phone, onChange = { phone = it }, label = "Telefon (+998XXXXXXXXX)",
+                DarkAuthField(value = phone, onChange = { phone = it }, label = tr("Telefon (+998XXXXXXXXX)", "Phone (+998XXXXXXXXX)", "Телефон (+998XXXXXXXXX)"),
                     icon = Icons.Default.Phone, keyboardType = KeyboardType.Phone)
                 Spacer(Modifier.height(20.dp))
-                PrimaryButton("SMS kod yuborish", isLoading = authState.isLoading, enabled = phone.length >= 12) {
+                PrimaryButton(tr("SMS kod yuborish", "Send SMS code", "Отправить SMS-код"), isLoading = authState.isLoading, enabled = phone.length >= 12) {
                     viewModel.sendPhoneOtp(phone, activity, onAutoVerified = onSuccess)
                 }
             }
             PhoneStep.ENTER_OTP -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Default.Sms, null, tint = Brand, modifier = Modifier.size(48.dp))
                 Spacer(Modifier.height(12.dp))
-                Text("SMS kodni kiriting", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = AuthText)
+                Text(tr("SMS kodni kiriting", "Enter the SMS code", "Введите SMS-код"), fontWeight = FontWeight.Bold, fontSize = 20.sp, color = AuthText)
                 Spacer(Modifier.height(6.dp))
-                Text("$phone ga yuborildi", color = AuthSubtext, fontSize = 14.sp)
+                Text(tr("$phone ga yuborildi", "Sent to $phone", "Отправлено на $phone"), color = AuthSubtext, fontSize = 14.sp)
                 Spacer(Modifier.height(32.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     otpDigits.forEachIndexed { i, digit ->
@@ -448,7 +480,7 @@ private fun PhoneSection(viewModel: AppViewModel, activity: Activity, onSuccess:
                                 }
                             },
                             modifier = Modifier.width(46.dp).height(56.dp).focusRequester(focusRequesters[i]),
-                            shape = RoundedCornerShape(0.dp),
+                            shape = AuthFieldShape,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Brand, unfocusedBorderColor = AuthBorder,
                                 focusedContainerColor = AuthSurface, unfocusedContainerColor = AuthSurface,
@@ -464,18 +496,18 @@ private fun PhoneSection(viewModel: AppViewModel, activity: Activity, onSuccess:
                 }
                 Spacer(Modifier.height(24.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Kod kelmadimi? ", color = AuthSubtext, fontSize = 13.sp)
+                    Text(tr("Kod kelmadimi? ", "Didn't get the code? ", "Код не пришел? "), color = AuthSubtext, fontSize = 13.sp)
                     TextButton(onClick = { viewModel.resetPhoneStep() }) {
-                        Text("Qayta yuborish", color = ColorError, fontSize = 13.sp)
+                        Text(tr("Qayta yuborish", "Resend", "Отправить снова"), color = ColorError, fontSize = 13.sp)
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                PrimaryButton("Tasdiqlash", isLoading = authState.isLoading,
+                PrimaryButton(tr("Tasdiqlash", "Verify", "Подтвердить"), isLoading = authState.isLoading,
                     enabled = otpDigits.all { it.isNotEmpty() }) {
                     viewModel.verifyPhoneOtp(otpDigits.joinToString(""), onSuccess = onSuccess, onError = {})
                 }
                 TextButton(onClick = { viewModel.resetPhoneStep(); otpDigits = List(6) { "" } }) {
-                    Text("← Raqamni o'zgartirish", color = AuthSubtext, fontSize = 13.sp)
+                    Text(tr("Raqamni o'zgartirish", "Change number", "Изменить номер"), color = AuthSubtext, fontSize = 13.sp)
                 }
             }
         }

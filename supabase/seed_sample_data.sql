@@ -98,3 +98,14 @@ insert into public.properties (id, user_id, title, description, deal_type, prope
   ('p007', 'u007', 'Buxoroda arzon yer uchastkasi sotiladi', 'Buxoro shahrida 6 sotix yer uchastkasi. Qurilish uchun ruxsatnomalari tayyor. Gaz, elektr va suv ulangan.', 'sale', 'land', 3, 'Buxoro', 11, 'Markaziy', 'Bahouddin Naqshband ko''chasi', 39.7747, 64.4286, 25000, 'USD', null, 600.0, 0, 0, 0, 0, 0, false, true, 44, '["https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800"]'::jsonb, 'Otabek Qodirov', '+998944321234', '+998944321234', 'https://i.pravatar.cc/150?img=25'),
   ('p008', 'u008', 'Chilonzorda yangi 5 xonali uy sotiladi', 'Chilonzor tumanida 2024-yilda qurilgan premium 5 xonali uy. Uchta qavatli, katta hovlisi va suzish havzasi mavjud. Premium darajada jihozlangan.', 'sale', 'house', 1, 'Toshkent', 3, 'Chilonzor', 'Navruz ko''chasi, 3', 41.2845, 69.2055, 450000, 'USD', null, 380.0, 5, 4, 1, 3, 2024, true, true, 428, '["https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800", "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800", "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800"]'::jsonb, 'Nodir Alimov', '+998998765432', '+998998765432', 'https://i.pravatar.cc/150?img=18')
 on conflict (id) do update set user_id = excluded.user_id, title = excluded.title, description = excluded.description, deal_type = excluded.deal_type, property_type = excluded.property_type, city_id = excluded.city_id, city_name = excluded.city_name, district_id = excluded.district_id, district_name = excluded.district_name, address = excluded.address, latitude = excluded.latitude, longitude = excluded.longitude, price = excluded.price, currency = excluded.currency, price_period = excluded.price_period, area_m2 = excluded.area_m2, bedrooms = excluded.bedrooms, bathrooms = excluded.bathrooms, floor = excluded.floor, total_floors = excluded.total_floors, year_built = excluded.year_built, is_new_build = excluded.is_new_build, is_active = excluded.is_active, views_count = excluded.views_count, images = excluded.images, seller_name = excluded.seller_name, seller_phone = excluded.seller_phone, seller_whatsapp = excluded.seller_whatsapp, seller_avatar = excluded.seller_avatar;
+
+-- STORAGE BUCKET SETUP
+insert into storage.buckets (id, name, public) 
+values ('property_images', 'property_images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "Public Access" on storage.objects;
+create policy "Public Access" on storage.objects for select using ( bucket_id = 'property_images' );
+
+drop policy if exists "Any user can upload" on storage.objects;
+create policy "Any user can upload" on storage.objects for insert with check ( bucket_id = 'property_images' );
