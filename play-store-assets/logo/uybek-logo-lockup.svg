@@ -1,0 +1,14 @@
+<svg width="1600" height="640" viewBox="0 0 1600 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="panel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F6F4EF"/>
+      <stop offset="100%" stop-color="#FFFCF8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="640" rx="56" fill="url(#panel)"/>
+  <rect x="72" y="72" width="496" height="496" rx="108" fill="#163042"/>
+  <image href="uybek-logo-mark-512.png" x="72" y="72" width="496" height="496"/>
+  <text x="650" y="268" font-size="170" font-family="Bahnschrift, Segoe UI, Arial, sans-serif" font-weight="700" fill="#163042">Uybek</text>
+  <text x="654" y="350" font-size="54" font-family="Segoe UI, Arial, sans-serif" font-weight="600" fill="#60717F">Find homes faster in Uzbekistan</text>
+  <text x="654" y="430" font-size="42" font-family="Segoe UI, Arial, sans-serif" fill="#60717F">Clear filters. Real listings. Direct chat.</text>
+</svg>

@@ -165,8 +165,10 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
         }
 
         when {
-            searchQuery.isBlank() -> SearchEmptyState()
-            searchResults.isEmpty() -> SearchNoResultsState(searchQuery)
+            searchResults.isEmpty() -> SearchNoResultsState(
+                searchQuery = searchQuery,
+                hasActiveFilters = filterState.hasActiveConstraints()
+            )
             else -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(layoutColumns),
@@ -182,7 +184,11 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                tr("${searchResults.size} ta natija topildi", "${searchResults.size} results found", "Найдено результатов: ${searchResults.size}"),
+                                tr(
+                                    "${searchResults.size} ta e'lon ko'rsatilmoqda",
+                                    "${searchResults.size} listings showing",
+                                    "Показано объявлений: ${searchResults.size}"
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -233,39 +239,24 @@ fun SearchScreen(viewModel: AppViewModel, navController: NavController) {
 }
 
 @Composable
-private fun SearchEmptyState() {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Surface(shape = RoundedCornerShape(26.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-            Icon(
-                Icons.Default.Search,
-                contentDescription = null,
-                modifier = Modifier.padding(24.dp).size(34.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
-        Spacer(Modifier.height(18.dp))
-        Text(
-            tr("Ko'chmas mulk qidiring", "Search real estate", "Ищите недвижимость"),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            tr("Shahar, tuman yoki mulk nomini kiriting", "Enter a city, district, or property name", "Введите город, район или название объекта"),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
+private fun SearchNoResultsState(searchQuery: String, hasActiveFilters: Boolean) {
+    val title = when {
+        searchQuery.isNotBlank() ->
+            tr("'$searchQuery' bo'yicha e'lon topilmadi", "No listings found for '$searchQuery'", "Объявления по запросу '$searchQuery' не найдены")
+        hasActiveFilters ->
+            tr("Filtrlarga mos e'lon topilmadi", "No listings match these filters", "Нет объявлений, соответствующих фильтрам")
+        else ->
+            tr("Hozircha faol e'lonlar yo'q", "No active listings yet", "Активных объявлений пока нет")
     }
-}
+    val body = when {
+        searchQuery.isNotBlank() ->
+            tr("Boshqa kalit so'z yoki filtrlarni sinab ko'ring", "Try another keyword or filter", "Попробуйте другой запрос или фильтр")
+        hasActiveFilters ->
+            tr("Filtrlarni yumshatib yana tekshirib ko'ring", "Loosen the filters and try again", "Смягчите фильтры и попробуйте снова")
+        else ->
+            tr("Keyinroq yana tekshirib ko'ring yoki yangi e'lon qo'shing", "Check back later or add a new listing", "Вернитесь позже или добавьте новое объявление")
+    }
 
-@Composable
-private fun SearchNoResultsState(searchQuery: String) {
     Column(
         modifier = Modifier.fillMaxSize().padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -281,7 +272,7 @@ private fun SearchNoResultsState(searchQuery: String) {
         }
         Spacer(Modifier.height(18.dp))
         Text(
-            tr("'$searchQuery' bo'yicha e'lon topilmadi", "No listings found for '$searchQuery'", "Объявления по запросу '$searchQuery' не найдены"),
+            title,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -289,7 +280,7 @@ private fun SearchNoResultsState(searchQuery: String) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            tr("Boshqa kalit so'z yoki filtrlarni sinab ko'ring", "Try another keyword or filter", "Попробуйте другой запрос или фильтр"),
+            body,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

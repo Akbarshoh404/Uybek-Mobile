@@ -27,7 +27,16 @@ data class FilterState(
     val maxPrice: Double? = null,
     val bedrooms: Int? = null,
     val query: String = ""
-)
+) {
+    fun hasActiveConstraints(): Boolean =
+        dealType != null ||
+            propertyType != null ||
+            cityId != null ||
+            minPrice != null ||
+            maxPrice != null ||
+            bedrooms != null ||
+            query.isNotBlank()
+}
 
 /** UI state for authentication operations */
 data class AuthUiState(
@@ -104,9 +113,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
-    val searchResults: StateFlow<List<Property>> = combine(_searchQuery, dataVersion) { q, _ ->
-        if (q.isBlank()) emptyList()
-        else propertyRepo.getProperties(query = q)
+    val searchResults: StateFlow<List<Property>> = combine(_searchQuery, _filterState, dataVersion) { q, filter, _ ->
+        propertyRepo.getProperties(
+            dealType = filter.dealType,
+            propertyType = filter.propertyType,
+            cityId = filter.cityId,
+            minPrice = filter.minPrice,
+            maxPrice = filter.maxPrice,
+            bedrooms = filter.bedrooms,
+            query = q.ifBlank { null }
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // ════════════════════════════════════════════════════════════════════════
