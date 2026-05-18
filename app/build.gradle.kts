@@ -18,11 +18,11 @@ val localProperties = Properties().apply {
 val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID", "")
 
 android {
-    namespace = "uz.angrykitten.uybek"
+    namespace = "uz.angrykitten.pavo"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "uz.angrykitten.uybek"
+        applicationId = "uz.angrykitten.pavo"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
